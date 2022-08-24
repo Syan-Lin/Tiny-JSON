@@ -37,6 +37,24 @@ std::string tiny_json::parse(const tiny_json::Object& obj){
 
 // 拷贝控制成员
 tiny_json::Number::Number(const double val){ num_ = val; }
+tiny_json::Number::Number(const std::string& val){
+    try{
+        num_ = std::stod(val);
+    }catch(std::invalid_argument){
+        try{
+            // 16 进制整数
+            num_ = static_cast<double>(std::stoi(val, nullptr, 16));
+            int i = val.find('.');
+            if(i >= 0){
+                std::cout << "[tiny_json_Warning]: 字符串 " << val
+                << " 转化为 Number 对象可能会丢失精度!" << std::endl;
+            }
+        }catch(std::invalid_argument){
+            std::cout << "[tiny_json_Error]: 字符串 " << val
+            << " 不能转化为 Number 对象!" << std::endl;
+        }
+    }
+}
 tiny_json::Number::Number(const Number& val){ num_ = val.get(); }
 tiny_json::Number& tiny_json::Number::operator=(const Number& val){
     num_ = val.get();
@@ -76,7 +94,7 @@ std::string tiny_json::Number::parse(){
     }
     return str;
 }
-bool tiny_json::Number::parseable(std::string val) const {
+bool tiny_json::Number::parseable(const std::string& val) const {
     return true;
 }
 bool tiny_json::Number::parseable() const { return true; }
@@ -91,8 +109,18 @@ void tiny_json::Number::parseSetting(NumberType type, size_t decimal_place){
 * @brief    Null 类实现
 ***************************/
 
+// 拷贝控制成员
+tiny_json::Null::Null(const std::string& val){
+    if(val != "null"){
+        std::cout << "[tiny_json_Error]: 字符串 " << val
+        << " 不能转化为 Null 对象!" << std::endl;
+    }
+}
+tiny_json::Null::Null(const char val[]): Null(std::string(val)){}
+
+// 功能成员
 std::string tiny_json::Null::parse(){ return "null"; }
-bool tiny_json::Null::parseable(std::string val) const { return val == "null" ? true : false; }
+bool tiny_json::Null::parseable(const std::string& val) const { return val == "null" ? true : false; }
 bool tiny_json::Null::parseable() const { return true; }
 
 /**************************
@@ -102,16 +130,11 @@ bool tiny_json::Null::parseable() const { return true; }
 ***************************/
 
 // 拷贝控制成员
-tiny_json::String::String(const std::string& val){
-    str_ = val;
-    parse();
-}
-tiny_json::String::String(const String& val){ str_ = val.get(); }
-tiny_json::String::String(String&& val) noexcept{ str_ = std::move(val.get()); }
-tiny_json::String::String(std::string&& val) noexcept{
-    str_ = std::move(val);
-    parse();
-}
+tiny_json::String::String(const std::string& val): str_(val){ parse(); }
+tiny_json::String::String(const char val[]): String(std::string(val)){}
+tiny_json::String::String(const String& val): str_(val.get()){}
+tiny_json::String::String(String&& val) noexcept : str_(std::move(val.get())){}
+tiny_json::String::String(std::string&& val) noexcept : str_(std::move(val)){ parse(); }
 tiny_json::String& tiny_json::String::operator=(const String& val){
     str_ = val.get();
     return *this;
@@ -135,9 +158,10 @@ tiny_json::String& tiny_json::String::operator=(std::string&& val) noexcept{
 void tiny_json::String::set(const std::string& val){
     str_ = val;
     is_parsed_ = true;
+    parseForFile();
 }
 std::string tiny_json::String::get() const { return str_; }
-void tiny_json::String::reset(){ str_.clear(); }
+void tiny_json::String::reset(){ str_.clear(); parsed_str_.clear(); }
 
 std::string tiny_json::String::parse() {
     if(is_parsed_){
@@ -235,7 +259,7 @@ void tiny_json::String::parseForFile(){
     }
     parsed_str_ = str;
 }
-bool tiny_json::String::parseable(std::string str) const {
+bool tiny_json::String::parseable(const std::string& str) const {
     for(int i = 0; i < str_.size(); i++){
         if(str_[i] == '\\'){
             i++;
@@ -274,7 +298,6 @@ bool tiny_json::String::parseable(std::string str) const {
 }
 bool tiny_json::String::parseable() const { return parseable(str_); }
 
-
 /**************************
 * @author   Yuan.
 * @date     2022/8/23
@@ -282,15 +305,16 @@ bool tiny_json::String::parseable() const { return parseable(str_); }
 ***************************/
 
 // 拷贝控制成员
-tiny_json::Boolean::Boolean(const bool val){ bool_ = val; }
+tiny_json::Boolean::Boolean(const bool val): bool_(val) {}
+tiny_json::Boolean::Boolean(const char val[]): Boolean(std::string(val)){}
+tiny_json::Boolean::Boolean(const Boolean& val): bool_(val.get()){}
 tiny_json::Boolean::Boolean(const std::string& val){
     if(!parseable(val)){
         std::cout << "[tiny_json_Error]: 字符串 " << val << " 不能转化为 Boolean 对象!" << std::endl;
         return;
     }
-    bool_ = val == "true" ? "true" : "false";
+    bool_ = (val == "true") ? true : false;
 }
-tiny_json::Boolean::Boolean(const Boolean& val){ bool_ = val.get(); }
 tiny_json::Boolean& tiny_json::Boolean::operator=(const Boolean& val){
     bool_ = val.get();
     return *this;
@@ -301,8 +325,14 @@ void tiny_json::Boolean::set(const bool val){ bool_ = val; }
 bool tiny_json::Boolean::get() const { return bool_; }
 void tiny_json::Boolean::reset(){ bool_ = false; }
 
-std::string tiny_json::Boolean::parse(){ return bool_ ? "true" : "false"; }
-bool tiny_json::Boolean::parseable(std::string val) const {
+std::string tiny_json::Boolean::parse(){
+    if(bool_){
+        return "true";
+    }else{
+        return "false";
+    }
+}
+bool tiny_json::Boolean::parseable(const std::string& val) const {
     return (val == "true" || val == "false") ? true : false;
 }
 bool tiny_json::Boolean::parseable() const { return true; }

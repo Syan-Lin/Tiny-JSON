@@ -24,7 +24,7 @@ features:
   - [x] 获取数字
   - [x] 重置数字
   - [x] 设置输出格式
-  - [ ] 读取 Number
+  - [x] 读取 Number
   - [x] 转化为字符串
 - String:
   - [x] 设置字符串

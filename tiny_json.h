@@ -43,7 +43,7 @@ public:
     // 将对象输出为字符串
     virtual std::string parse() = 0;
     // JSON 文件是否能转化为对象
-    virtual bool parseable(std::string) const = 0;
+    virtual bool parseable(const std::string&) const = 0;
     // 对象是否能转化为 JSON 文件
     virtual bool parseable() const = 0;
 };
@@ -172,6 +172,7 @@ public:
     // 拷贝控制成员
     Number() = default;
     Number(const double);
+    Number(const std::string&);
     Number(const Number&);                    // 拷贝构造
     Number& operator=(const Number&);         // 拷贝赋值
     Number& operator=(const double);
@@ -187,7 +188,7 @@ public:
     // 将数字输出为字符串
     std::string parse() override;
     // JSON 对象能够转化为 Number 对象
-    bool parseable(std::string) const override;
+    bool parseable(const std::string&) const override;
     // Number 对象能否转化为 JSON 对象
     bool parseable() const override;
     // 设置数字输出格式
@@ -202,10 +203,16 @@ private:
 // 空类型
 class Null : public Parseable{
 public:
+    // 拷贝控制成员
+    Null() = default;
+    Null(const char[]);
+    Null(const std::string&);
+    ~Null() = default;
+
     // 输出 Null 字符串
     std::string parse() override;
     // JSON 对象能够转化为 Null 对象
-    bool parseable(std::string) const override;
+    bool parseable(const std::string&) const override;
     // Null 对象能否转化为 JSON 对象
     bool parseable() const override;
 };
@@ -217,6 +224,7 @@ public:
     // 拷贝控制成员
     String() = default;
     String(const std::string&);
+    String(const char[]);
     String(const String&);                      // 拷贝构造
     String(String&&) noexcept;                  // 移动构造
     String(std::string&&) noexcept;             // 移动构造
@@ -236,7 +244,7 @@ public:
     // 输出字符串
     std::string parse() override;
     // JSON 对象能够转化为 String 对象
-    bool parseable(std::string) const override;
+    bool parseable(const std::string&) const override;
     // String 对象能否转化为 JSON 对象
     bool parseable() const override;
 
@@ -255,6 +263,7 @@ public:
     Boolean() = default;
     Boolean(const bool);
     Boolean(const std::string&);
+    Boolean(const char[]);
     Boolean(const Boolean&);                    // 拷贝构造
     Boolean& operator=(const Boolean&);         // 拷贝赋值
     ~Boolean() = default;
@@ -269,12 +278,12 @@ public:
     // 将布尔值输出为字符串
     std::string parse() override;
     // JSON 对象能够转化为 Boolean 对象
-    bool parseable(std::string) const override;
+    bool parseable(const std::string&) const override;
     // Boolean 对象能否转化为 JSON 对象
     bool parseable() const override;
 
 private:
-    bool bool_;
+    bool bool_ = false;
 };
 
 // 将对象转化为字符串
