@@ -33,14 +33,11 @@ void NumberTest(){
     n1.parseSetting(NumberType::kFloat, 18);
     assert(n1.get() == 3.14159245622134131 && n1.parse() == "3.14159245622134131");
     n2.set(1234567890);
-    assert(n2.get() == 1234567890 && n2.parse() == "1.23457e+09");
-    n2.parseSetting(NumberType::kInteger);
     assert(n2.get() == 1234567890 && n2.parse() == "1234567890");
-    n3.setHex(false);
+    n3.parseSetting(NumberType::kInteger);
     assert(n3.get() == 11256099 && n3.parse() == "11256099");
     n3.reset();
     assert(n3.get() == 0 && n3.parse() == "0");
-    assert(n5.isHex());
 
     // 数字格式
     {
@@ -64,29 +61,22 @@ void NumberTest(){
         Number s4("-1.");
         Number s5("-0xa");
         Number s6("-1.1e2");
-        // assert(s1.get() == 1 && s1.parse() == "1");
-        // assert(s2.get() == 1.1 && s2.parse() == "1.1");
-        // assert(s3.get() == 0.1 && s3.parse() == "0.1");
-        // assert(s4.get() == 1 && s4.parse() == "1");
-        // assert(s5.get() == 10 && s5.parse() == "0xa");
-        // assert(s6.get() == 110 && s6.parse() == "110");
-
-        cout << s1.get() << " " << s1.parse() << endl;
-        cout << s2.get() << " " << s2.parse() << endl;
-        cout << s3.get() << " " << s3.parse() << endl;
-        cout << s4.get() << " " << s4.parse() << endl;
-        cout << s5.get() << " " << s5.parse() << endl;
-        cout << s6.get() << " " << s6.parse() << endl;
+        assert(s1.get() == -1 && s1.parse() == "-1");
+        assert(s2.get() == -1.1 && s2.parse() == "-1.1");
+        assert(s3.get() == -0.1 && s3.parse() == "-0.1");
+        assert(s4.get() == -1 && s4.parse() == "-1");
+        assert(s5.get() == -10 && s5.parse() == "-10");
+        assert(s6.get() == -110 && s6.parse() == "-110");
     }
 
     // 错误测试
-    Number n8("a.56");          // 十六进制不支持小数，丢失精度
+    Number n8("a.56");                          // 十六进制不支持小数，丢失精度
     assert(n8.get() == 10 && n8.parse() == "0xa");
-    Number n9("qabc5q.56");     // 非法的字符串
-    n4.setHex(true);            // 浮点数转十六进制，丢失精度
-    assert(n4.get() == 3 && n4.parse() == "0x3");
-    cout << n4.get() << " " << n4.parse() << endl;
-
+    Number n9("qabc5q.56");                     // 非法的字符串
+    n4.parseSetting(NumberType::kInteger);      // 浮点数以整数输出会丢失精度
+    assert(n4.get() == 3.14 && n4.parse() == "3");
+    n4.parseSetting(NumberType::kHex);          // 浮点数以十六进制输出会丢失精度
+    assert(n4.get() == 3.14 && n4.parse() == "0x3");
 }
 
 // Null 类测试

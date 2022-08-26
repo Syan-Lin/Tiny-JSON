@@ -232,91 +232,115 @@ bool tiny_json::Array::parseable() const {
 ***************************/
 
 // 拷贝控制成员
-tiny_json::Number::Number(const double val, bool hex): num_(val), hex_(hex){
-    if(hex_){
-        type_ = NumberType::kInteger;
+tiny_json::Number::Number(const double val, const NumberType type): num_(val), type_(type){
+    if(type_ == NumberType::kDefault){
+        // 未设置 type 且是整数，自动转为整数
+        bool is_integer = (static_cast<long long>(val) == val);
+        if(is_integer){
+            type_ = NumberType::kInteger;
+        }
     }
 }
-tiny_json::Number::Number(const char val[], bool hex): Number(std::string(val), hex){}
-tiny_json::Number::Number(const std::string& val, bool hex): hex_(hex){
+tiny_json::Number::Number(const char val[], const NumberType type): Number(std::string(val), type){}
+tiny_json::Number::Number(const std::string& val, const NumberType type): type_(type){
     bool isHex = (val.size() >= 2 && val[0] == '0') && (val[1] == 'x' || val[1] == 'X');
-    if(hex_ || isHex){
-        type_ = NumberType::kInteger;
-        hex_ = true;
+    if(isHex){
+        // 0x... -> Hex
         try{
             num_ = static_cast<double>(std::stoi(val, nullptr, 16));
+            type_ = NumberType::kHex;
             int i = val.find('.');
             if(i >= 0){
-                std::cout << "[tiny_json_Warning_Number]: 字符串 " << val
+                std::cout << "[tiny_json_Warning]: 字符串 " << val
                 << " 转化为 Number 对象可能会丢失精度!" << std::endl;
             }
         }catch(std::invalid_argument){
-            std::cout << "[tiny_json_Error_Number]: 字符串 " << val
+            std::cout << "[tiny_json_Error]: 字符串 " << val
             << " 不能转化为 Number 对象!" << std::endl;
         }
     }else{
         try{
             num_ = std::stod(val);
+            if(type_ == NumberType::kDefault){
+                // 未设置 type 且是整数，自动转为整数
+                bool is_integer = (static_cast<long long>(num_) == num_);
+                if(is_integer){
+                    type_ = NumberType::kInteger;
+                }
+            }
         }catch(std::invalid_argument){
             try{
+                // -0x... or abc123
                 // 无法转化成十进制，尝试十六进制
                 num_ = static_cast<double>(std::stoi(val, nullptr, 16));
-                hex_ = true;
-                type_ = NumberType::kInteger;
+                type_ = NumberType::kHex;
                 int i = val.find('.');
                 if(i >= 0){
-                    std::cout << "[tiny_json_Warning_Number]: 字符串 " << val
+                    std::cout << "[tiny_json_Warning]: 字符串 " << val
                     << " 转化为 Number 对象可能会丢失精度!" << std::endl;
                 }
             }catch(std::invalid_argument){
-                std::cout << "[tiny_json_Error_Number]: 字符串 " << val
+                std::cout << "[tiny_json_Error]: 字符串 " << val
                 << " 不能转化为 Number 对象!" << std::endl;
             }
         }
     }
 }
-tiny_json::Number::Number(const Number& val): num_(val.num_), hex_(val.hex_)
-                                            , type_(val.type_), decimal_place_(val.decimal_place_){}
+tiny_json::Number::Number(const Number& val): num_(val.num_), type_(val.type_)
+                                            , decimal_place_(val.decimal_place_){}
 tiny_json::Number& tiny_json::Number::operator=(const Number& val){
     num_ = val.num_;
-    hex_ = val.hex_;
     type_ = val.type_;
     decimal_place_ = val.decimal_place_;
     return *this;
 }
 tiny_json::Number& tiny_json::Number::operator=(const double val){
-    isLoseAccuracy(val);
-    num_ = val;
+    set(val);
     return *this;
 }
 
 // 功能成员
-void tiny_json::Number::set(const double val){ num_ = val; isLoseAccuracy(num_); }
+void tiny_json::Number::set(const double val){
+    num_ = val;
+    bool is_integer = (static_cast<long long>(val) == val);
+    switch(type_){
+        case NumberType::kDefault:
+            if(is_integer){
+                type_ = NumberType::kInteger;
+            }
+            break;
+        case NumberType::kFloat:
+            if(is_integer){
+                type_ = NumberType::kInteger;
+            }
+            break;
+        case NumberType::kInteger:
+            if(!is_integer){
+                type_ = NumberType::kDefault;
+            }
+            break;
+        case NumberType::kHex:
+            if(!is_integer){
+                type_ = NumberType::kDefault;
+            }
+            break;
+    }
+}
 double tiny_json::Number::get() const { return num_; }
 void tiny_json::Number::reset(){
     num_ = 0;
     type_ = NumberType::kDefault;
-    hex_ = false;
     decimal_place_ = 6;
 }
-bool tiny_json::Number::isHex() const { return hex_; }
-void tiny_json::Number::setHex(const bool hex){
-    hex_ = hex;
-    isLoseAccuracy(num_);
-    if(hex_){
-        type_ = NumberType::kInteger;
-        num_ = static_cast<long long>(num_);
-    }
-}
+bool tiny_json::Number::isHex() const { return type_ == NumberType::kHex; }
 void tiny_json::Number::isLoseAccuracy(const double val){
-    long long integer = static_cast<long long>(val);
-    bool is_integer = (integer == val);
-    if(hex_ && !is_integer){
+    bool is_integer = (static_cast<long long>(val) == val);
+    if(!is_integer && type_ == NumberType::kInteger){
+        std::cout << "[tiny_json_Warning_Number]: 浮点数 " << val
+        << " 转化为整数会丢失精度!" << std::endl;
+    }else if(!is_integer && type_ == NumberType::kHex){
         std::cout << "[tiny_json_Warning_Number]: 浮点数 " << val
         << " 转化为十六进制数会丢失精度!" << std::endl;
-    }else if(!is_integer && type_ == NumberType::kInteger){
-        std::cout << "[tiny_json_Warning_Number]: 浮点数 " << val
-        << " 输出为整数会丢失精度!" << std::endl;
     }
 }
 
@@ -332,18 +356,19 @@ std::string tiny_json::Number::parse(){
         }
         case NumberType::kInteger:{
             long long integer = static_cast<long long>(num_);
-            if(hex_){
-                ss << std::hex << integer;
-                str = "0x" + ss.str();
-            }else{
-                ss << integer;
-                str = ss.str();
-            }
+            ss << integer;
+            str = ss.str();
             break;
         }
         case NumberType::kFloat:{
             ss << std::setprecision(decimal_place_) << num_;
             str = ss.str();
+            break;
+        }
+        case NumberType::kHex:{
+            long long integer = static_cast<long long>(num_);
+            ss << std::hex << integer;
+            str = "0x" + ss.str();
             break;
         }
     }
@@ -371,11 +396,8 @@ bool tiny_json::Number::parseable(const std::string& val) const {
 bool tiny_json::Number::parseable() const { return true; }
 void tiny_json::Number::parseSetting(NumberType type, size_t decimal_place){
     type_ = type;
-    if(hex_ && type_ != NumberType::kInteger){
-        std::cout << "[tiny_json_Error_Number]: 十六进制数只能以整数形式输出! " << std::endl;
-        type_ = NumberType::kInteger;
-    }
     decimal_place_ = decimal_place;
+    isLoseAccuracy(num_);
 }
 
 /**************************

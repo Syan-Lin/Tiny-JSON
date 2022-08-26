@@ -176,14 +176,14 @@ private:
     Vector arr_;
 };
 
-// 数字类型，整数或浮点数，支持十六进制
+// 数字类型，整数或浮点数，支持十六进制（负十六进制数会自动转化为整数）
 class Number : public Parseable{
 public:
     // 拷贝控制成员
     Number() = default;
-    Number(const double, const bool = false);
-    Number(const std::string&, const bool = false);
-    Number(const char[], const bool = false);
+    Number(const double, const NumberType = NumberType::kDefault);
+    Number(const std::string&, const NumberType = NumberType::kDefault);
+    Number(const char[], const NumberType = NumberType::kDefault);
     Number(const Number&);                    // 拷贝构造
     Number& operator=(const Number&);         // 拷贝赋值
     Number& operator=(const double);
@@ -197,8 +197,6 @@ public:
     void reset();
     // 是否是十六进制
     bool isHex() const;
-    // 是否是十六进制
-    void setHex(const bool);
 
     // 将数字输出为字符串
     std::string parse() override;
@@ -206,14 +204,13 @@ public:
     bool parseable(const std::string&) const override;
     // Number 对象能否转化为 JSON 对象
     bool parseable() const override;
-    // 设置数字输出格式
+    // 设置数字输出格式，当类型为 kInteger 或 kHex 时，第二个参数没有作用
     void parseSetting(NumberType, size_t = 6);
 
 private:
     double num_ = 0;
     NumberType type_ = NumberType::kDefault;
     size_t decimal_place_ = 6;
-    bool hex_ = false;
     void isLoseAccuracy(const double);
 };
 
