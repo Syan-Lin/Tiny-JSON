@@ -34,7 +34,8 @@ enum class Type{
 enum class NumberType{
     kInteger,   // 整数类型
     kFloat,     // 浮点数类型，可指定位数
-    kDefault    // 默认类型，六位浮点数
+    kDefault,   // 默认类型，六位浮点数
+    kHex        // 十六进制整数类型
 };
 
 // 功能接口
@@ -51,7 +52,6 @@ public:
 // JSON 键值对中的值：
 // 可以是 Number、Boolean、String、Null、Object、Array
 class Value : public Parseable{
-    template <typename T> using ptr = std::unique_ptr<T>;
 public:
     // 拷贝控制成员
     Value();
@@ -59,42 +59,41 @@ public:
     Value(const Boolean&);
     Value(const Null&);
     Value(const String&);
-    Value(const Object&);
-    Value(const Array&);
-    Value(const Value&);                // 拷贝构造
-    Value(Value&&) noexcept;            // 移动构造
-    Value& operator=(Value&);           // 拷贝赋值
-    Value& operator=(Value&&) noexcept; // 移动赋值
-    ~Value();
+    //Value(const Object&);
+    //Value(const Array&);
+    Value(const std::string&);          // 未实现
+    // Value(const Value&);                // 拷贝构造
+    // Value(Value&&) noexcept;            // 移动构造
+    // Value& operator=(const Value&);     // 拷贝赋值
+    // Value& operator=(Value&&) noexcept; // 移动赋值
+    ~Value() = default;
 
     // 值设置
     void set(const Number&);
     void set(const Boolean&);
     void set(const Null&);
     void set(const String&);
-    void set(const Object&);
-    void set(const Array&);
-    void set(const Value&);
+    //void set(const Object&);
+    //void set(const Array&);
+    //void set(const Value&);
     // 获取值类型
     Type getType() const;
     // 获取值
-    template <typename T> T& get() const;
+    Parseable& get();
     // 重置值为 Null
     void reset();
 
     // 将值输出为字符串
     std::string parse() override;
+    // JSON 对象能够转化为 Value 对象
+    bool parseable(const std::string&) const override;
+    // Value 对象能否转化为 JSON 对象
+    bool parseable() const override;
 
 private:
     Type type_;
-    union{
-        ptr<Number> number_val_;
-        ptr<Boolean> boolean_val_;
-        ptr<String> string_val_;
-        ptr<Null> null_val_;
-        ptr<Object> object_val_;
-        ptr<Array> array_val_;
-    };
+    std::unique_ptr<Parseable> val_;
+    void setUnion(const Value& val);
 };
 
 // JSON 的键值对集合
@@ -124,6 +123,10 @@ public:
 
     // 将键值对集合输出为字符串
     std::string parse() override;
+    // JSON 对象能够转化为 Object 对象
+    bool parseable(const std::string&) const override;
+    // Object 对象能否转化为 JSON 对象
+    bool parseable() const override;
 
 private:
     kvMap kv_map_;
@@ -131,16 +134,19 @@ private:
 
 // 存储 Value 的数组
 class Array : public Parseable{
-    typedef std::vector<std::unique_ptr<Value>> Vector;
+    typedef std::vector<Value> Vector;
 public:
     // 拷贝控制成员
-    Array();
+    Array() = default;
     Array(std::initializer_list<Value>);    // 列表初始化
     Array(const Array&);                    // 拷贝构造
     Array(Array&&) noexcept;                // 移动构造
+    Array(const std::string&);
+    Array(const char[]);
     Array& operator=(Array&);               // 拷贝赋值
     Array& operator=(Array&&) noexcept;     // 移动赋值
-    ~Array();
+    Value& operator[](size_t);
+    ~Array() = default;
 
     // 在尾部添加元素
     void append(const Value&);
@@ -149,30 +155,35 @@ public:
     // 在指定位置之前添加元素
     void add(size_t, const Value&);
     // 删除指定位置的元素
-    void del(size_t, const Value&);
+    void del(size_t);
     // 设置指定位置的元素
     void set(size_t, const Value&);
     // 获取数组大小
     size_t size() const;
     // 获取元素
-    Value& get(size_t) const;
+    Value& get(size_t);
     // 清空数组
     void reset();
 
     // 将数组输出为字符串
     std::string parse() override;
+    // JSON 对象能够转化为 Array 对象
+    bool parseable(const std::string&) const override;
+    // Array 对象能否转化为 JSON 对象
+    bool parseable() const override;
 
 private:
     Vector arr_;
 };
 
-// 数字类型，整数或浮点数
+// 数字类型，整数或浮点数，支持十六进制
 class Number : public Parseable{
 public:
     // 拷贝控制成员
     Number() = default;
-    Number(const double);
-    Number(const std::string&);
+    Number(const double, const bool = false);
+    Number(const std::string&, const bool = false);
+    Number(const char[], const bool = false);
     Number(const Number&);                    // 拷贝构造
     Number& operator=(const Number&);         // 拷贝赋值
     Number& operator=(const double);
@@ -184,6 +195,10 @@ public:
     double get() const;
     // 重置数字
     void reset();
+    // 是否是十六进制
+    bool isHex() const;
+    // 是否是十六进制
+    void setHex(const bool);
 
     // 将数字输出为字符串
     std::string parse() override;
@@ -195,9 +210,11 @@ public:
     void parseSetting(NumberType, size_t = 6);
 
 private:
-    double num_;
+    double num_ = 0;
     NumberType type_ = NumberType::kDefault;
     size_t decimal_place_ = 6;
+    bool hex_ = false;
+    void isLoseAccuracy(const double);
 };
 
 // 空类型
@@ -231,6 +248,7 @@ public:
     String& operator=(const String&);           // 拷贝赋值
     String& operator=(String&&) noexcept;       // 移动赋值
     String& operator=(const std::string&);      // 拷贝赋值
+    String& operator=(const char[]);            // 拷贝赋值
     String& operator=(std::string&&) noexcept;  // 移动赋值
     ~String() = default;
 
@@ -238,6 +256,8 @@ public:
     void set(const std::string&);
     // 获取字符串
     std::string get() const;
+    // 获取 JSON 字符串
+    std::string getJSON() const;
     // 重置字符串
     void reset();
 
@@ -289,6 +309,6 @@ private:
 // 将对象转化为字符串
 extern std::string parse(const Object&);
 // 将字符串转化为对象
-extern Object& parse(const std::string);
+// extern Object parse(const std::string);
 
 }

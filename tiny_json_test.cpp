@@ -8,45 +8,93 @@ using namespace tiny_json;
 
 // Number 类测试
 void NumberTest(){
-    // 六种初始化
-    Number n1;
-    Number n2(3.14);
-    Number n3("abc123");    // 十六进制
-    Number n4(n2);
-    Number n5 = n3;
-    Number n6 = 7.8;
-    cout << n2.get() << " " << n2.parse() << endl;
-    cout << n3.get() << " " << n3.parse() << endl;
-    cout << n4.get() << " " << n4.parse() << endl;
-    cout << n5.get() << " " << n5.parse() << endl;
-    cout << n6.get() << " " << n6.parse() << endl;
+    // 四种初始化
+    Number n1;                      // 默认为十进制 0
+    Number n2(3.14);                // Number(double) 等价于 Number n2 = 3.14
+    Number n3("0Xabc123");          // Number(char[]) 等价于 Number n3 = "abc123"
+    Number n4(n2);                  // Number(Number&) 等价于 Number n4 = n2
+    Number n5(string("abc123"));    // Number(string&) 等价于 Number n5 = string("abc123"
+    assert(n1.get() == 0 && n1.parse() == "0");
+    assert(n2.get() == 3.14 && n2.parse() == "3.14");
+    assert(n3.get() == 11256099 && n3.parse() == "0xabc123");
+    assert(n4.get() == 3.14 && n4.parse() == "3.14");
+    assert(n5.get() == 11256099 && n5.parse() == "0xabc123");
+
+    // 两种赋值
+    Number n6, n7;
+    n6 = 3.14;                      // operator=(double)
+    n7 = n2;                        // operator=(Number&)
+    assert(n6.get() == 3.14 && n6.parse() == "3.14");
+    assert(n7.get() == 3.14 && n7.parse() == "3.14");
 
     // 功能测试
-    n1.set(3.141592655555555);
-    cout << n1.get() << ' ' << n1.parse() << endl;
+    n1.set(3.14159245622134131);
+    assert(n1.get() == 3.14159245622134131 && n1.parse() == "3.14159");
     n1.parseSetting(NumberType::kFloat, 18);
-    cout << n1.get() << ' ' << n1.parse() << endl;
+    assert(n1.get() == 3.14159245622134131 && n1.parse() == "3.14159245622134131");
     n2.set(1234567890);
-    cout << n2.get() << ' ' << n2.parse() << endl;
+    assert(n2.get() == 1234567890 && n2.parse() == "1.23457e+09");
     n2.parseSetting(NumberType::kInteger);
-    cout << n2.get() << ' ' << n2.parse() << endl;
+    assert(n2.get() == 1234567890 && n2.parse() == "1234567890");
+    n3.setHex(false);
+    assert(n3.get() == 11256099 && n3.parse() == "11256099");
+    n3.reset();
+    assert(n3.get() == 0 && n3.parse() == "0");
+    assert(n5.isHex());
 
-    Number n7("-1.23457e+09");
-    n7.parseSetting(NumberType::kInteger);
-    cout << static_cast<int>(n7.get()) << ' ' << n7.parse() << endl;
+    // 数字格式
+    {
+        Number s1("1");
+        Number s2("1.1");
+        Number s3(".1");
+        Number s4("1.");
+        Number s5("0xa");
+        Number s6("1.1e2");
+        assert(s1.get() == 1 && s1.parse() == "1");
+        assert(s2.get() == 1.1 && s2.parse() == "1.1");
+        assert(s3.get() == 0.1 && s3.parse() == "0.1");
+        assert(s4.get() == 1 && s4.parse() == "1");
+        assert(s5.get() == 10 && s5.parse() == "0xa");
+        assert(s6.get() == 110 && s6.parse() == "110");
+    }
+    {
+        Number s1("-1");
+        Number s2("-1.1");
+        Number s3("-.1");
+        Number s4("-1.");
+        Number s5("-0xa");
+        Number s6("-1.1e2");
+        // assert(s1.get() == 1 && s1.parse() == "1");
+        // assert(s2.get() == 1.1 && s2.parse() == "1.1");
+        // assert(s3.get() == 0.1 && s3.parse() == "0.1");
+        // assert(s4.get() == 1 && s4.parse() == "1");
+        // assert(s5.get() == 10 && s5.parse() == "0xa");
+        // assert(s6.get() == 110 && s6.parse() == "110");
+
+        cout << s1.get() << " " << s1.parse() << endl;
+        cout << s2.get() << " " << s2.parse() << endl;
+        cout << s3.get() << " " << s3.parse() << endl;
+        cout << s4.get() << " " << s4.parse() << endl;
+        cout << s5.get() << " " << s5.parse() << endl;
+        cout << s6.get() << " " << s6.parse() << endl;
+    }
 
     // 错误测试
-    Number n8("a.56"); // 十六进制不支持小数，丢失精度
-    cout << n8.get() << ' ' << n8.parse() << endl;
-    Number n9("qabc5q.56");
+    Number n8("a.56");          // 十六进制不支持小数，丢失精度
+    assert(n8.get() == 10 && n8.parse() == "0xa");
+    Number n9("qabc5q.56");     // 非法的字符串
+    n4.setHex(true);            // 浮点数转十六进制，丢失精度
+    assert(n4.get() == 3 && n4.parse() == "0x3");
+    cout << n4.get() << " " << n4.parse() << endl;
+
 }
 
 // Null 类测试
 void NullTest(){
     Null n1("null");
     Null n2;
-    cout << n1.parse() << endl;
-    cout << n2.parse() << endl;
+    assert(n1.parse() == "null");
+    assert(n2.parse() == "null");
 
     // 功能测试
     assert(n1.parseable("null"));
@@ -58,31 +106,83 @@ void NullTest(){
 
 // String 类测试
 void StringTest(){
-    // 九种初始化
+    // 六种初始化
     string str = "test\nnext\tline\n";
-    String s1(str);
-    String s2(s1);
-    String s3(String("a String"));
-    String s4("a string");
-    String s5 = s1;
-    String s6 = String("a String");
-    String s7 = str;
-    String s8 = "a string";
-    String s9;
-    cout << "s1: " << s1.get() << " parse:" << s1.parse() << endl;
-    cout << "s2: " << s2.get() << " parse:" << s2.parse() << endl;
-    cout << "s3: " << s3.get() << " parse:" << s3.parse() << endl;
-    cout << "s4: " << s4.get() << " parse:" << s4.parse() << endl;
-    cout << "s5: " << s5.get() << " parse:" << s5.parse() << endl;
-    cout << "s6: " << s6.get() << " parse:" << s6.parse() << endl;
-    cout << "s7: " << s7.get() << " parse:" << s7.parse() << endl;
-    cout << "s8: " << s8.get() << " parse:" << s8.parse() << endl;
+    String s1(str);                             // String(string&) 等价于 String s1 = str
+    String s2(s1);                              // String(String&) 等价于 String s2 = s1
+    String s3("a String");                      // String(char[]) -> String(string&&)
+                                                // 等价于 String s3(String("a String"))
+                                                // 等价于 String s3 = String("a String")
+                                                // 等价于 String s3 = "a String"
+    String s4(string("a string"));              // String(string&&) 等价于 String s4 = string("a string")
+    String s5;                                  // String()
+    String s6(move(String("move String")));     // String(String&&) 等价于 String s6 = move(String("move String"))
+                                                // 这里实际上会经过 String(char[]) -> String(string&&) -> String(String&&)
+                                                // 不过前两步是构造 String("move String") 这个右值对象
+    assert(s1.get() == "test\nnext\tline\n");
+    assert(s1.getJSON() == "test\\nnext\\tline\\n");
+    assert(s1.parse() == "test\\nnext\\tline\\n");
+    assert(s1.getJSON() == "test\\nnext\\tline\\n");
+    assert(s2.get() == "test\nnext\tline\n");
+    assert(s2.getJSON() == "test\\nnext\\tline\\n");
+    assert(s2.parse() == "test\\nnext\\tline\\n");
+    assert(s2.getJSON() == "test\\nnext\\tline\\n");
+    assert(s3.get() == "a String");
+    assert(s3.getJSON() == "a String");
+    assert(s3.parse() == "a String");
+    assert(s3.getJSON() == "a String");
+    assert(s4.get() == "a string");
+    assert(s4.getJSON() == "a string");
+    assert(s4.parse() == "a string");
+    assert(s4.get() == "a string");
+    assert(s5.get() == "");
+    assert(s5.getJSON() == "");
+    assert(s5.parse() == "");
+    assert(s5.getJSON() == "");
+    assert(s6.get() == "move String");
+    assert(s6.getJSON() == "move String");
+    assert(s6.parse() == "move String");
+    assert(s6.getJSON() == "move String");
+
+    // 五种赋值
+    String s7, s8, s9, s10, s11;
+    s7 = s1;                                      // operator=(String&)
+    s8 = str;                                     // operator=(string&)
+    s9 = std::move(String("test\nnext\tline\n")); // operator=(String&&)
+    s10 = string("test\nnext\tline\n");           // operator=(string&&)
+    s11 = "test\nnext\tline\n";                   // operator=(char[])
+    assert(s7.get() == "test\nnext\tline\n");
+    assert(s7.getJSON() == "test\\nnext\\tline\\n");
+    assert(s7.parse() == "test\\nnext\\tline\\n");
+    assert(s7.getJSON() == "test\\nnext\\tline\\n");
+    assert(s8.get() == "test\nnext\tline\n");
+    assert(s8.getJSON() == "test\\nnext\\tline\\n");
+    assert(s8.parse() == "test\\nnext\\tline\\n");
+    assert(s8.getJSON() == "test\\nnext\\tline\\n");
+    assert(s9.get() == "test\nnext\tline\n");
+    assert(s9.getJSON() == "test\\nnext\\tline\\n");
+    assert(s9.parse() == "test\\nnext\\tline\\n");
+    assert(s9.getJSON() == "test\\nnext\\tline\\n");
+    assert(s10.get() == "test\nnext\tline\n");
+    assert(s10.getJSON() == "test\\nnext\\tline\\n");
+    assert(s10.parse() == "test\\nnext\\tline\\n");
+    assert(s10.getJSON() == "test\\nnext\\tline\\n");
+    assert(s11.get() == "test\nnext\tline\n");
+    assert(s11.getJSON() == "test\\nnext\\tline\\n");
+    assert(s11.parse() == "test\\nnext\\tline\\n");
+    assert(s11.getJSON() == "test\\nnext\\tline\\n");
 
     // 功能测试
     s1.set("this is a message");
-    cout << "s1: " << s1.get() << " parse:" << s1.parse() << endl;
+    assert(s1.get() == "this is a message");
+    assert(s1.getJSON() == "this is a message");
+    assert(s1.parse() == "this is a message");
+    assert(s1.getJSON() == "this is a message");
     s1.reset();
-    cout << "s1: " << s1.get() << " parse:" << s1.parse() << endl;
+    assert(s1.get() == "");
+    assert(s1.getJSON() == "");
+    assert(s1.parse() == "");
+    assert(s1.getJSON() == "");
     assert(s1.parseable("right"));
     assert(s1.parseable());
 }
@@ -90,18 +190,22 @@ void StringTest(){
 // Boolean 类测试
 void BooleanTest(){
     // 五种初始化
-    Boolean b1;
-    Boolean b2 = true;
-    Boolean b3(string("false"));
-    Boolean b4(b2);
-    Boolean b5 = b2;
-    Boolean b6("true");
+    Boolean b1;                     // 默认为 false
+    Boolean b2 = true;              // Boolean(bool) 等价于 Boolean b2(true)
+    Boolean b3(string("false"));    // Boolean(string&) 等价于 Boolean b3 = string("false")
+    Boolean b4(b2);                 // Boolean(Boolean&) 等价于 Boolean b4 = b2
+    Boolean b5("true");             // Boolean(char[]) 等价于 Boolean b5 = "true"
     assert(!b1.get());
     assert(b2.get());
     assert(!b3.get());
     assert(b4.get());
     assert(b5.get());
-    assert(b6.get());
+
+    // 一种赋值
+    Boolean b6;
+    b6 = b1;
+    assert(!b6.get());
+
     // 功能测试
     b1.set(true);
     b2.reset();
@@ -117,9 +221,9 @@ void BooleanTest(){
 
 int main(){
     NumberTest();
-    BooleanTest();
-    StringTest();
-    NullTest();
+    // BooleanTest();
+    // StringTest();
+    // NullTest();
 
     return 0;
 }
