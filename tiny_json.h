@@ -111,16 +111,16 @@ private:
 // JSON 的键值对集合
 class Object : public Parseable{
     typedef std::string Key;
-    typedef std::map<std::string, std::unique_ptr<Value>> kvMap;
+    typedef std::map<std::string, Value> kvMap;
 public:
     // 拷贝控制成员
-    Object();
-    Object(const Key&, const Value&);
+    Object() = default;
+    Object(const std::string&);
     Object(const Object&);                // 拷贝构造
     Object(Object&&) noexcept;            // 移动构造
-    Object& operator=(Object&);           // 拷贝赋值
+    Object& operator=(const Object&);           // 拷贝赋值
     Object& operator=(Object&&) noexcept; // 移动赋值
-    ~Object();
+    ~Object() = default;
 
     // 添加键值对，如果存在同名的键值对，则覆盖
     void add(const Key&, const Value&);
@@ -129,7 +129,7 @@ public:
     // 设置键值对，如果不存在则创建一个
     void set(const Key&, const Value&);
     // 根据键获得值
-    Value& get(const Key&) const;
+    Value& get(const Key&);
     // 清空键值对集合
     void reset();
 

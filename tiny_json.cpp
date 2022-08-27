@@ -83,22 +83,22 @@ tiny_json::Value::Value(Value&& val) noexcept{
     type_ = val.type_;
     switch(type_){
         case Type::kNumber:
-            val_ = std::make_shared<Number>(std::move(val.val_));
+            val_ = std::make_shared<Number>(std::move(static_cast<Number&>(*val.val_)));
             break;
         case Type::kBoolean:
-            val_ = std::make_shared<Boolean>(std::move(val.val_));
+            val_ = std::make_shared<Boolean>(std::move(static_cast<Boolean&>(*val.val_)));
             break;
         case Type::kString:
-            val_ = std::make_shared<String>(std::move(val.val_));
+            val_ = std::make_shared<String>(std::move(static_cast<String&>(*val.val_)));
             break;
         case Type::kNull:
-            val_ = std::make_shared<Null>(std::move(val.val_));
+            val_ = std::make_shared<Null>(std::move(static_cast<Null&>(*val.val_)));
             break;
         case Type::kObject:
-            val_ = std::make_shared<Object>(std::move(val.val_));
+            val_ = std::make_shared<Object>(std::move(static_cast<Object&>(*val.val_)));
             break;
         case Type::kArray:
-            val_ = std::make_shared<Array>(std::move(val.val_));
+            val_ = std::make_shared<Array>(std::move(static_cast<Array&>(*val.val_)));
             break;
     }
 }
@@ -112,22 +112,22 @@ tiny_json::Value& tiny_json::Value::operator=(Value&& val) noexcept{
     type_ = val.type_;
     switch(type_){
         case Type::kNumber:
-            val_ = std::make_shared<Number>(std::move(val.val_));
+            val_ = std::make_shared<Number>(std::move(static_cast<Number&>(*val.val_)));
             break;
         case Type::kBoolean:
-            val_ = std::make_shared<Boolean>(std::move(val.val_));
+            val_ = std::make_shared<Boolean>(std::move(static_cast<Boolean&>(*val.val_)));
             break;
         case Type::kString:
-            val_ = std::make_shared<String>(std::move(val.val_));
+            val_ = std::make_shared<String>(std::move(static_cast<String&>(*val.val_)));
             break;
         case Type::kNull:
-            val_ = std::make_shared<Null>(std::move(val.val_));
+            val_ = std::make_shared<Null>(std::move(static_cast<Null&>(*val.val_)));
             break;
         case Type::kObject:
-            val_ = std::make_shared<Object>(std::move(val.val_));
+            val_ = std::make_shared<Object>(std::move(static_cast<Object&>(*val.val_)));
             break;
         case Type::kArray:
-            val_ = std::make_shared<Array>(std::move(val.val_));
+            val_ = std::make_shared<Array>(std::move(static_cast<Array&>(*val.val_)));
             break;
     }
     return *this;
@@ -162,7 +162,7 @@ tiny_json::Type tiny_json::Value::getType() const { return type_; }
 tiny_json::Parseable& tiny_json::Value::get(){ return *val_; }
 void tiny_json::Value::reset(){
     type_ = Type::kNull;
-    val_ = std::make_unique<Null>();
+    val_ = std::make_shared<Null>();
 }
 
 std::string tiny_json::Value::parse(){
@@ -302,16 +302,57 @@ tiny_json::Array& tiny_json::Array::operator=(Array&& val) noexcept {
 }
 
 // 功能成员
-tiny_json::Value& tiny_json::Array::operator[](size_t index){ return arr_[index]; }
-tiny_json::Value& tiny_json::Array::get(size_t index){ return arr_[index]; }
+tiny_json::Value& tiny_json::Array::operator[](size_t index){
+    return get(index);
+}
+tiny_json::Value& tiny_json::Array::get(size_t index){
+    if(index >= 0 && index < arr_.size()){
+        return arr_[index];
+    }else{
+        std::cout << "[tiny_json_Error]: index:  " << index
+        << " 超出 Array 对象大小限制!" << std::endl;
+        throw("Vector Boundary Error!");
+    }
+}
 size_t tiny_json::Array::size() const { return arr_.size(); }
 void tiny_json::Array::reset(){ arr_.clear(); }
 void tiny_json::Array::append(const Value& val){ arr_.emplace_back(val); }
 void tiny_json::Array::append(const std::string& val){ arr_.emplace_back(Value(val)); }
-void tiny_json::Array::pop(){ arr_.pop_back(); }
-void tiny_json::Array::add(size_t index, const Value& val){ arr_.emplace(arr_.begin() + index, val); }
-void tiny_json::Array::del(size_t index){ arr_.erase(arr_.begin() + index); }
-void tiny_json::Array::set(size_t index, const Value& val){ arr_[index] = val; }
+void tiny_json::Array::pop(){
+    if(arr_.size() > 0){
+        arr_.pop_back();
+    }else{
+        std::cout << "[tiny_json_Error]: Array 对象没有元素可以 pop!" << std::endl;
+        throw("Vector Boundary Error!");
+    }
+}
+void tiny_json::Array::add(size_t index, const Value& val){
+    if(index >= 0 && index < arr_.size()){
+        arr_.emplace(arr_.begin() + index, val);
+    }else{
+        std::cout << "[tiny_json_Error]: index:  " << index
+        << " 超出 Array 对象大小限制!" << std::endl;
+        throw("Vector Boundary Error!");
+    }
+}
+void tiny_json::Array::del(size_t index){
+    if(index >= 0 && index < arr_.size()){
+        arr_.erase(arr_.begin() + index);
+    }else{
+        std::cout << "[tiny_json_Error]: index:  " << index
+        << " 超出 Array 对象大小限制!" << std::endl;
+        throw("Vector Boundary Error!");
+    }
+}
+void tiny_json::Array::set(size_t index, const Value& val){
+    if(index >= 0 && index < arr_.size()){
+        arr_[index] = val;
+    }else{
+        std::cout << "[tiny_json_Error]: index:  " << index
+        << " 超出 Array 对象大小限制!" << std::endl;
+        throw("Vector Boundary Error!");
+    }
+}
 
 void tiny_json::Array::checkQuoMark(const std::string& val){
     int num_d = 0, num_s = 0;
@@ -388,6 +429,7 @@ std::string tiny_json::Array::parse(){
             result += arr_[i].parse();
         }
     }
+    return result;
 }
 bool tiny_json::Array::parseable(const std::string& val) const {
     for(int i = 0; i < arr_.size(); i++){
