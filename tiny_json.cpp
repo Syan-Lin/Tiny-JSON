@@ -37,6 +37,74 @@ std::string tiny_json::parse(const tiny_json::Object& obj){
 * @brief    Object 类实现
 ***************************/
 
+// 拷贝控制成员
+tiny_json::Object::Object(const Object& obj): kv_map_(obj.kv_map_){}
+tiny_json::Object::Object(Object&& obj) noexcept {
+    kv_map_ = std::move(obj.kv_map_);
+}
+tiny_json::Object& tiny_json::Object::operator=(const Object& obj){
+    kv_map_ = obj.kv_map_;
+    return *this;
+}
+tiny_json::Object& tiny_json::Object::operator=(Object&& obj) noexcept {
+    kv_map_ = std::move(obj.kv_map_);
+    return *this;
+}
+tiny_json::Object::Object(const std::string& val){
+    // TODO
+}
+
+// 功能成员
+void tiny_json::Object::add(const Key& key, const Value& val){
+    if(kv_map_.find(key) != kv_map_.end()){
+        std::cout << "[tiny_json_Warning_Object]: Key: " << key
+        << " 已存在于 Object 对象，将覆盖!" << std::endl;
+    }
+    kv_map_[key] = val;
+}
+void tiny_json::Object::del(const Key& key){
+    if(kv_map_.find(key) != kv_map_.end()){
+        kv_map_.erase(key);
+    }
+}
+void tiny_json::Object::set(const Key& key, const Value& val){
+    kv_map_[key] = val;
+}
+tiny_json::Value& tiny_json::Object::get(const Key& key){
+    if(kv_map_.find(key) != kv_map_.end()){
+        return kv_map_[key];
+    }else{
+        std::cout << "[tiny_json_Error_Object]: Key: " << key
+        << " 未找到!" << std::endl;
+        throw("Vector Boundary Error!");
+    }
+}
+
+std::string tiny_json::Object::parse(){
+    std::string result;
+    result += "{\n";
+    for(auto e : kv_map_){
+        result += '\t';
+        result += "\"" + e.first + "\": ";
+        result += e.second.parse() + ",\n";
+    }
+    result.erase(result.size() - 2, 2);
+    result += "\n}";
+    return result;
+}
+bool tiny_json::Object::parseable(const std::string&) const {
+    // TODO
+    return true;
+}
+bool tiny_json::Object::parseable() const {
+    for(auto e : kv_map_){
+        if(!e.second.parseable()){
+            return false;
+        }
+    }
+    return true;
+}
+
 /**************************
 * @author   Yuan.
 * @date     2022/8/27
