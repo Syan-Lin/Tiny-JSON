@@ -155,7 +155,7 @@ public:
     Array(Array&&) noexcept;                // 移动构造
     Array(const std::string&);
     Array(const char[]);
-    Array& operator=(Array&);               // 拷贝赋值
+    Array& operator=(const Array&);         // 拷贝赋值
     Array& operator=(Array&&) noexcept;     // 移动赋值
     Value& operator[](size_t);
     ~Array() = default;
@@ -192,7 +192,7 @@ private:
     void checkQuoMark(const std::string&);
     // 找出所有分割元素的 ',' 的位置
     void findIndexes(const std::string&, std::vector<int>&);
-    // 去除空格和 {'[', ']', '\'', '"'}
+    // 去除空格和 { [, ], ', " }
     std::string& removeBlank(std::string&);
 };
 
@@ -253,6 +253,7 @@ public:
 
 // 字符串类型
 // 特殊字符需要转义: \\n、\\t、\\r、\\u、\\、\"
+// 换行 TODO
 class String : public Parseable{
 public:
     // 拷贝控制成员

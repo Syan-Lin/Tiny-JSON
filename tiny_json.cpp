@@ -33,6 +33,12 @@ std::string tiny_json::parse(const tiny_json::Object& obj){
 
 /**************************
 * @author   Yuan.
+* @date     2022/8/28
+* @brief    Object 类实现
+***************************/
+
+/**************************
+* @author   Yuan.
 * @date     2022/8/27
 * @brief    Value 类实现
 ***************************/
@@ -71,7 +77,7 @@ tiny_json::Value::Value(const std::string& val){
 }
 tiny_json::Value::Value(const Object& val): type_(Type::kObject), val_(std::make_shared<Object>(val)){}
 tiny_json::Value::Value(const Array& val): type_(Type::kArray), val_(std::make_shared<Array>(val)){}
-tiny_json::Value::Value(const Value& val): type_(val.getType()), val_(val.val_){}
+tiny_json::Value::Value(const Value& val): type_(val.type_), val_(val.val_){}
 // 没有定义移动构造函数的类可能存在 Bug ???
 tiny_json::Value::Value(Value&& val) noexcept{
     type_ = val.type_;
@@ -283,16 +289,27 @@ tiny_json::Array::Array(const std::string& val){
     }
 }
 tiny_json::Array::Array(const char val[]): Array(std::string(val)){}
+tiny_json::Array::Array(Array&& val) noexcept { arr_ = std::move(val.arr_); }
+tiny_json::Array& tiny_json::Array::operator=(const Array& val){
+    for(int i = 0; i < val.size(); i++){
+        this->append(val.arr_[i]);
+    }
+    return *this;
+}
+tiny_json::Array& tiny_json::Array::operator=(Array&& val) noexcept {
+    arr_ = std::move(val.arr_);
+    return *this;
+}
 
 // 功能成员
 tiny_json::Value& tiny_json::Array::operator[](size_t index){ return arr_[index]; }
 tiny_json::Value& tiny_json::Array::get(size_t index){ return arr_[index]; }
 size_t tiny_json::Array::size() const { return arr_.size(); }
 void tiny_json::Array::reset(){ arr_.clear(); }
-void tiny_json::Array::append(const Value& val){ arr_.push_back(val); }
+void tiny_json::Array::append(const Value& val){ arr_.emplace_back(val); }
 void tiny_json::Array::append(const std::string& val){ arr_.emplace_back(Value(val)); }
 void tiny_json::Array::pop(){ arr_.pop_back(); }
-void tiny_json::Array::add(size_t index, const Value& val){ arr_.insert(arr_.begin() + index, val); }
+void tiny_json::Array::add(size_t index, const Value& val){ arr_.emplace(arr_.begin() + index, val); }
 void tiny_json::Array::del(size_t index){ arr_.erase(arr_.begin() + index); }
 void tiny_json::Array::set(size_t index, const Value& val){ arr_[index] = val; }
 
@@ -357,16 +374,37 @@ std::string& tiny_json::Array::removeBlank(std::string& val){
 }
 
 std::string tiny_json::Array::parse(){
-
+    std::string result;
+    for(int i = 0; i < arr_.size(); i++){
+        if(i == 0){
+            result += "[";
+            result += arr_[i].parse();
+        }else if(i == arr_.size() - 1){
+            result += ", ";
+            result += arr_[i].parse();
+            result += "]";
+        }else{
+            result += ", ";
+            result += arr_[i].parse();
+        }
+    }
 }
-bool tiny_json::Array::parseable(const std::string&) const {
-
-}
-bool tiny_json::Array::parseable() const {
+bool tiny_json::Array::parseable(const std::string& val) const {
+    for(int i = 0; i < arr_.size(); i++){
+        if(!arr_[i].parseable(val)){
+            return false;
+        }
+    }
     return true;
 }
-
-
+bool tiny_json::Array::parseable() const {
+    for(int i = 0; i < arr_.size(); i++){
+        if(!arr_[i].parseable()){
+            return false;
+        }
+    }
+    return true;
+}
 
 /**************************
 * @author   Yuan.
