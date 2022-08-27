@@ -10,6 +10,8 @@
 #include <sstream>
 #include <iomanip>
 #include <iostream>
+#include <regex>
+#include <stack>
 
 bool tiny_json::DEBUG = false;
 bool tiny_json::JSON5 = true;
@@ -31,103 +33,125 @@ std::string tiny_json::parse(const tiny_json::Object& obj){
 
 /**************************
 * @author   Yuan.
-* @date     2022/8/25
+* @date     2022/8/27
 * @brief    Value 类实现
 ***************************/
 
 // 拷贝控制成员
-tiny_json::Value::Value(): type_(Type::kNull), val_(std::make_unique<Null>()){}
-tiny_json::Value::Value(const Number& val): type_(Type::kNumber), val_(std::make_unique<Number>(val)){}
-tiny_json::Value::Value(const Boolean& val): type_(Type::kBoolean), val_(std::make_unique<Boolean>(val)){}
-tiny_json::Value::Value(const Null& val): type_(Type::kNull), val_(std::make_unique<Null>(val)){}
-tiny_json::Value::Value(const String& val): type_(Type::kString), val_(std::make_unique<String>(val)){}
-//tiny_json::Value::Value(const Object& val): type_(Type::kObject), val_(std::make_unique<Object>(val)){}
-//tiny_json::Value::Value(const Array& val): type_(Type::kArray), val_(std::make_unique<Array>(val)){}
-//tiny_json::Value::Value(const Value& val): type_(val.getType()){ setUnion(val); }
-// 没有定义移动构造函数的类可能存在 Bug
-// tiny_json::Value::Value(Value&& val) noexcept{
-//     type_ = val.getType();
-//     switch(type_){
-//         case Type::kNumber:
-//             val_ = std::make_unique<Number>(std::move(val.get()));
-//             break;
-//         case Type::kBoolean:
-//             val_ = std::make_unique<Boolean>(std::move(val.get()));
-//             break;
-//         case Type::kString:
-//             val_ = std::make_unique<String>(std::move(val.get()));
-//             break;
-//         case Type::kNull:
-//             val_ = std::make_unique<Null>(std::move(val.get()));
-//             break;
-//         case Type::kObject:
-//             val_ = std::make_unique<Object>(std::move(val.get()));
-//             break;
-//         case Type::kArray:
-//             val_ = std::make_unique<Array>(std::move(val.get()));
-//             break;
-//     }
-// }
-// tiny_json::Value& tiny_json::Value::operator=(const Value& val){
-//     type_ = val.getType();
-//     setUnion(val);
-//     return *this;
-// }
-// 没有定义移动构造函数的类可能存在 Bug
-// tiny_json::Value& tiny_json::Value::operator=(Value&& val) noexcept{
-//     type_ = val.getType();
-//     switch(type_){
-//         case Type::kNumber:
-//             val_ = std::make_unique<Number>(std::move(val.get()));
-//             break;
-//         case Type::kBoolean:
-//             val_ = std::make_unique<Boolean>(std::move(val.get()));
-//             break;
-//         case Type::kString:
-//             val_ = std::make_unique<String>(std::move(val.get()));
-//             break;
-//         case Type::kNull:
-//             val_ = std::make_unique<Null>(std::move(val.get()));
-//             break;
-//         case Type::kObject:
-//             val_ = std::make_unique<Object>(std::move(val.get()));
-//             break;
-//         case Type::kArray:
-//             val_ = std::make_unique<Array>(std::move(val.get()));
-//             break;
-//     }
-//     return *this;
-// }
+tiny_json::Value::Value(): type_(Type::kNull), val_(std::make_shared<Null>()){}
+tiny_json::Value::Value(const Number& val): type_(Type::kNumber), val_(std::make_shared<Number>(val)){}
+tiny_json::Value::Value(const Boolean& val): type_(Type::kBoolean), val_(std::make_shared<Boolean>(val)){}
+tiny_json::Value::Value(const Null& val): type_(Type::kNull), val_(std::make_shared<Null>(val)){}
+tiny_json::Value::Value(const String& val): type_(Type::kString), val_(std::make_shared<String>(val)){}
+tiny_json::Value::Value(const char val[]): Value(std::string(val)){}
+tiny_json::Value::Value(const std::string& val){
+    using namespace reg_ex;
+    if(regex_match(val, kPatternNumber) || regex_match(val, kPatternHex)){
+        val_ = std::make_shared<Number>(val);
+    }else if(regex_match(val, kPatternString)){
+        // 去除引号
+        std::string temp = val;
+        temp.erase(0, 1);
+        temp.erase(temp.size() - 1, 1);
+        val_ = std::make_shared<String>(temp);
+    }else if(regex_match(val, kPatternBool)){
+        val_ = std::make_shared<Boolean>(val);
+    }else if(regex_match(val, kPatternNull)){
+        val_ = std::make_shared<Null>(val);
+    }else if(regex_match(val, kPatternArray)){
+        val_ = std::make_shared<Array>(val);        // Todo
+
+    }else if(regex_match(val, kPatternObj)){
+        val_ = std::make_shared<Object>(val);       // Todo
+
+    }else{
+        std::cout << "[tiny_json_Error]: 字符串 " << val
+        << " 不能转化为 Value 对象!" << std::endl;
+    }
+}
+tiny_json::Value::Value(const Object& val): type_(Type::kObject), val_(std::make_shared<Object>(val)){}
+tiny_json::Value::Value(const Array& val): type_(Type::kArray), val_(std::make_shared<Array>(val)){}
+tiny_json::Value::Value(const Value& val): type_(val.getType()), val_(val.val_){}
+// 没有定义移动构造函数的类可能存在 Bug ???
+tiny_json::Value::Value(Value&& val) noexcept{
+    type_ = val.type_;
+    switch(type_){
+        case Type::kNumber:
+            val_ = std::make_shared<Number>(std::move(val.val_));
+            break;
+        case Type::kBoolean:
+            val_ = std::make_shared<Boolean>(std::move(val.val_));
+            break;
+        case Type::kString:
+            val_ = std::make_shared<String>(std::move(val.val_));
+            break;
+        case Type::kNull:
+            val_ = std::make_shared<Null>(std::move(val.val_));
+            break;
+        case Type::kObject:
+            val_ = std::make_shared<Object>(std::move(val.val_));
+            break;
+        case Type::kArray:
+            val_ = std::make_shared<Array>(std::move(val.val_));
+            break;
+    }
+}
+tiny_json::Value& tiny_json::Value::operator=(const Value& val){
+    type_ = val.type_;
+    val_ = val.val_;
+    return *this;
+}
+// 没有定义移动构造函数的类可能存在 Bug ???
+tiny_json::Value& tiny_json::Value::operator=(Value&& val) noexcept{
+    type_ = val.type_;
+    switch(type_){
+        case Type::kNumber:
+            val_ = std::make_shared<Number>(std::move(val.val_));
+            break;
+        case Type::kBoolean:
+            val_ = std::make_shared<Boolean>(std::move(val.val_));
+            break;
+        case Type::kString:
+            val_ = std::make_shared<String>(std::move(val.val_));
+            break;
+        case Type::kNull:
+            val_ = std::make_shared<Null>(std::move(val.val_));
+            break;
+        case Type::kObject:
+            val_ = std::make_shared<Object>(std::move(val.val_));
+            break;
+        case Type::kArray:
+            val_ = std::make_shared<Array>(std::move(val.val_));
+            break;
+    }
+    return *this;
+}
 
 // 功能成员
 void tiny_json::Value::set(const Number& val){
     type_ = Type::kNumber;
-    val_ = std::make_unique<Number>(val);
+    val_ = std::make_shared<Number>(val);
 }
 void tiny_json::Value::set(const Boolean& val){
     type_ = Type::kBoolean;
-    val_ = std::make_unique<Boolean>(val);
+    val_ = std::make_shared<Boolean>(val);
 }
 void tiny_json::Value::set(const Null& val){
     type_ = Type::kNull;
-    val_ = std::make_unique<Null>(val);
+    val_ = std::make_shared<Null>(val);
 }
 void tiny_json::Value::set(const String& val){
     type_ = Type::kString;
-    val_ = std::make_unique<String>(val);
+    val_ = std::make_shared<String>(val);
 }
-// void tiny_json::Value::set(const Object& val){
-//     type_ = Type::kObject;
-//     val_ = std::make_unique<Object>(val);
-// }
-// void tiny_json::Value::set(const Array& val){
-//     type_ = Type::kArray;
-//     val_ = std::make_unique<Array>(val);
-// }
-// void tiny_json::Value::set(const Value& val){
-//     type_ = val.getType();
-//     setUnion(val);
-// }
+void tiny_json::Value::set(const Object& val){
+    type_ = Type::kObject;
+    val_ = std::make_shared<Object>(val);
+}
+void tiny_json::Value::set(const Array& val){
+    type_ = Type::kArray;
+    val_ = std::make_shared<Array>(val);
+}
 tiny_json::Type tiny_json::Value::getType() const { return type_; }
 tiny_json::Parseable& tiny_json::Value::get(){ return *val_; }
 void tiny_json::Value::reset(){
@@ -135,46 +159,85 @@ void tiny_json::Value::reset(){
     val_ = std::make_unique<Null>();
 }
 
-// void tiny_json::Value::setUnion(const Value& val){
-//     switch(type_){
-//         case Type::kNumber:
-//             val_ = std::make_unique<Number>(val.get());
-//             break;
-//         case Type::kBoolean:
-//             val_ = std::make_unique<Boolean>(val.get());
-//             break;
-//         case Type::kString:
-//             val_ = std::make_unique<String>(val.get());
-//             break;
-//         case Type::kNull:
-//             val_ = std::make_unique<Null>(val.get());
-//             break;
-//         case Type::kObject:
-//             val_ = std::make_unique<Object>(val.get());
-//             break;
-//         case Type::kArray:
-//             val_ = std::make_unique<Array>(val.get());
-//             break;
-//     }
-// }
-
 std::string tiny_json::Value::parse(){
+    switch(type_){
+        case Type::kNull:
+            return static_cast<Null&>(*val_).parse();
+            break;
+        case Type::kNumber:
+            return static_cast<Number&>(*val_).parse();
+            break;
+        case Type::kString:
+            return static_cast<String&>(*val_).parse();
+            break;
+        case Type::kArray:
+            return static_cast<Array&>(*val_).parse();
+            break;
+        case Type::kBoolean:
+            return static_cast<Boolean&>(*val_).parse();
+            break;
+        case Type::kObject:
+            return static_cast<Object&>(*val_).parse();
+            break;
+    }
+    std::cout << "[tiny_json_Error]: Value 对象错误!" << std::endl;
     return "";
 }
 bool tiny_json::Value::parseable(const std::string& val) const {
-    return true;
+    switch(type_){
+        case Type::kNull:
+            return static_cast<Null&>(*val_).parseable(val);
+            break;
+        case Type::kNumber:
+            return static_cast<Number&>(*val_).parseable(val);
+            break;
+        case Type::kString:
+            return static_cast<String&>(*val_).parseable(val);
+            break;
+        case Type::kArray:
+            return static_cast<Array&>(*val_).parseable(val);
+            break;
+        case Type::kBoolean:
+            return static_cast<Boolean&>(*val_).parseable(val);
+            break;
+        case Type::kObject:
+            return static_cast<Object&>(*val_).parseable(val);
+            break;
+    }
+    std::cout << "[tiny_json_Error]: Value 对象错误!" << std::endl;
+    return false;
 }
 bool tiny_json::Value::parseable() const {
-    return true;
+    switch(type_){
+        case Type::kNull:
+            return static_cast<Null&>(*val_).parseable();
+            break;
+        case Type::kNumber:
+            return static_cast<Number&>(*val_).parseable();
+            break;
+        case Type::kString:
+            return static_cast<String&>(*val_).parseable();
+            break;
+        case Type::kArray:
+            return static_cast<Array&>(*val_).parseable();
+            break;
+        case Type::kBoolean:
+            return static_cast<Boolean&>(*val_).parseable();
+            break;
+        case Type::kObject:
+            return static_cast<Object&>(*val_).parseable();
+            break;
+    }
+    std::cout << "[tiny_json_Error]: Value 对象错误!" << std::endl;
+    return false;
 }
-
 
 /**************************
 * @author   Yuan.
-* @date     2022/8/25
+* @date     2022/8/27
 * @brief    Array 类实现
 ***************************/
-/*
+
 // 拷贝控制成员
 tiny_json::Array::Array(std::initializer_list<Value> il){
     for(auto beg = il.begin(); beg != il.end(); ++beg){
@@ -182,22 +245,44 @@ tiny_json::Array::Array(std::initializer_list<Value> il){
     }
 }
 tiny_json::Array::Array(const Array& val){
-    // for(int i = 0; i < val.size(); i++){
-    //     Value v = val.get(i);
-    //     this->append(v);
-    // }
+    for(int i = 0; i < val.size(); i++){
+        this->append(val.arr_[i]);
+    }
 }
 tiny_json::Array::Array(const std::string& val){
-    if(!parseable(val)){
+    if(parseable(val)){
+        // 生成 Array
+        // [..., ".[].,..", '.[].,..', ...]
+        std::vector<int> indexes;
+        checkQuoMark(val);
+        findIndexes(val, indexes);
+
+        if(indexes.size() == 0){
+            // 特殊情况，只有一个元素
+            std::string element = val;
+            removeBlank(element);
+            append(element);
+        }else{
+            // 第一个和最后一个元素特殊处理
+            int size = indexes.size();
+            std::string element1 = val.substr(0, indexes[0]);
+            std::string element2 = val.substr(indexes[size-1] + 1, val.size() - indexes[size-1]);
+            removeBlank(element1);
+            removeBlank(element2);
+            append(element1);
+            append(element2);
+            for(int i = 1; i < size; i++){
+                std::string element = val.substr(indexes[i-1] + 1, indexes[i] - indexes[i-1]);
+                removeBlank(element);
+                append(element);
+            }
+        }
+    }else{
         std::cout << "[tiny_json_Error]: 字符串 " << val
         << " 不能转化为 Array 对象!" << std::endl;
-    }else{
-        // 生成 Array
     }
 }
 tiny_json::Array::Array(const char val[]): Array(std::string(val)){}
-
-
 
 // 功能成员
 tiny_json::Value& tiny_json::Array::operator[](size_t index){ return arr_[index]; }
@@ -205,11 +290,71 @@ tiny_json::Value& tiny_json::Array::get(size_t index){ return arr_[index]; }
 size_t tiny_json::Array::size() const { return arr_.size(); }
 void tiny_json::Array::reset(){ arr_.clear(); }
 void tiny_json::Array::append(const Value& val){ arr_.push_back(val); }
+void tiny_json::Array::append(const std::string& val){ arr_.emplace_back(Value(val)); }
 void tiny_json::Array::pop(){ arr_.pop_back(); }
 void tiny_json::Array::add(size_t index, const Value& val){ arr_.insert(arr_.begin() + index, val); }
 void tiny_json::Array::del(size_t index){ arr_.erase(arr_.begin() + index); }
 void tiny_json::Array::set(size_t index, const Value& val){ arr_[index] = val; }
 
+void tiny_json::Array::checkQuoMark(const std::string& val){
+    int num_d = 0, num_s = 0;
+    for(int i = 0; i < val.size(); i++){
+        if(i > 0 && val[i] == '"' && val[i - 1] != '\\'){
+            num_d++;
+        }else if(i > 0 && val[i] == '\'' && val[i - 1] != '\\'){
+            num_s++;
+        }
+    }
+    if(num_d % 2 != 0 || num_s % 2 != 0){
+        std::cout << "[tiny_json_Error]: 字符串 " << val
+        << " 不能转化为 Array 对象!(单双引号错误)" << std::endl;
+        return;
+    }
+}
+void tiny_json::Array::findIndexes(const std::string& val, std::vector<int>& indexes){
+    bool d = false, s = false;   // 是否在双引号或单引号中
+    for(int i = 0; i < val.size(); i++){
+        if(!d && !s && val[i] == ','){
+            // 不在单双引号内的逗号
+            indexes.push_back(i);
+            continue;
+        }
+        if(!d && !s){
+            if(i > 0 && val[i] == '"' && val[i - 1] != '\\'){
+                // 不是转义的双引号
+                d = true;
+            }else if(i > 0 && val[i] == '\'' && val[i - 1] != '\\'){
+                // 不是转义的单引号
+                s = true;
+            }
+        }else{
+            if(d && i > 0 && val[i] == '"' && val[i - 1] != '\\'){
+                // 在双引号中，且遇到另一个非转义双引号
+                d = false;
+            }else if(s && i > 0 && val[i] == '\'' && val[i - 1] != '\\'){
+                // 在单引号中，且遇到另一个非转义单引号
+                s = false;
+            }
+        }
+    }
+}
+std::string& tiny_json::Array::removeBlank(std::string& val){
+    for(int i = 0; i < val.size(); i++){
+        if(val[i] == '[' || val[i] == ' '){
+            val.erase(i, 1);
+        }else{
+            break;
+        }
+    }
+    for(int i = val.size() - 1; i >= 0; i--){
+        if(val[i] == ']' || val[i] == ' '){
+            val.erase(i, 1);
+        }else{
+            break;
+        }
+    }
+    return val;
+}
 
 std::string tiny_json::Array::parse(){
 
@@ -221,13 +366,11 @@ bool tiny_json::Array::parseable() const {
     return true;
 }
 
-*/
-
 
 
 /**************************
 * @author   Yuan.
-* @date     2022/8/24
+* @date     2022/8/26
 * @brief    Number 类实现
 ***************************/
 
@@ -565,36 +708,36 @@ void tiny_json::String::parseForFile(){
     parsed_str_ = str;
 }
 bool tiny_json::String::parseable(const std::string& str) const {
-    for(int i = 0; i < str_.size(); i++){
-        if(str_[i] == '\\'){
+    for(int i = 0; i < str.size(); i++){
+        if(str[i] == '\\'){
             i++;
-            switch(str_[i]){
+            switch(str[i]){
                 case 'b': case 'f': case 't':
                 case 'n': case 'r': case '"':
                 case '\\': break;
                 case 'u':{
                     std::stringstream ss;
                     int k = 0;
-                    for(; k < 4 && i < str_.size(); k++){
+                    for(; k < 4 && i < str.size(); k++){
                         i++;
-                        ss << std::hex << str_[i];
+                        ss << std::hex << str[i];
                     }
                     // 不满足 \uxxxx 格式
                     if(k != 4){
-                        std::cout << "[tiny_json_Error]: 字符串 " << str_
+                        std::cout << "[tiny_json_Error]: 字符串 " << str
                         << " 不能转化为 String 对象!(错误类型: Unicode 非法)" << std::endl;
                         return false;
                     }
                     break;
                 }
                 default:
-                    std::cout << "[tiny_json_Error]: 字符串 " << str_
+                    std::cout << "[tiny_json_Error]: 字符串 " << str
                     << " 不能转化为 String 对象!(错误类型: 转义字符非法)" << std::endl;
                     return false;
                     break;
             }
-        }else if(str_[i] == '"'){
-            std::cout << "[tiny_json_Error]: 字符串 " << str_
+        }else if(str[i] == '"'){
+            std::cout << "[tiny_json_Error]: 字符串 " << str
             << " 不能转化为 String 对象!(错误类型: 转义字符非法)" << std::endl;
             return false;
         }

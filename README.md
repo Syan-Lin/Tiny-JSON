@@ -4,6 +4,15 @@ features:
 - 智能指针
 - 模板
 
+Value 数据格式：
+- "String"              JSON5('String' 或换行 'String\nString')
+- Number                JSON5(十六进制数)
+- Boolean
+- null
+- [Value, Value, Value] JSON5(最后一个元素可以跟逗号)
+- "key": Value          JSON5(键可以不要引号，键值后可以跟逗号)
+
+
 功能列表:
 - Value:
   - [ ] 支持六种数据
@@ -19,7 +28,7 @@ features:
   - [ ] 清空键值对
   - [ ] 转化为字符串
 - Number:
-  - [x] 支持整数、浮点数
+  - [x] 支持整数、浮点数、十六进制
   - [x] 设置数字
   - [x] 获取数字
   - [x] 重置数字

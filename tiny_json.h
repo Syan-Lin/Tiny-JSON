@@ -4,6 +4,7 @@
 #include <memory>
 #include <map>
 #include <vector>
+#include <regex>
 
 namespace tiny_json{
 
@@ -38,6 +39,16 @@ enum class NumberType{
     kHex        // 十六进制整数类型
 };
 
+namespace reg_ex{
+    const std::regex kPatternNumber("[+-]?((\\d+|\\d*\\.\\d+)|(\\d+\\.\\d+)e[+-]?\\d+)");
+    const std::regex kPatternHex("(0[xX]([a-fA-F\\d]*))|([a-fA-F]+[a-fA-F\\d]*)");
+    const std::regex kPatternString("(\"(.|\\s)*\")|(\'(.|\\s)*\')");
+    const std::regex kPatternBool("(true)|(false)");
+    const std::regex kPatternNull("(null)");
+    const std::regex kPatternArray("\\[(.|\\s)*\\]");
+    const std::regex kPatternObj("(\"(.|\\s)+\":(.|\\s)+)|((.|\\s)+:(.|\\s)+)");
+}
+
 // 功能接口
 class Parseable{
 public:
@@ -59,13 +70,16 @@ public:
     Value(const Boolean&);
     Value(const Null&);
     Value(const String&);
-    //Value(const Object&);
-    //Value(const Array&);
-    Value(const std::string&);          // 未实现
-    // Value(const Value&);                // 拷贝构造
-    // Value(Value&&) noexcept;            // 移动构造
-    // Value& operator=(const Value&);     // 拷贝赋值
-    // Value& operator=(Value&&) noexcept; // 移动赋值
+    Value(const Object&);
+    Value(const Array&);
+    // 用字符串初始化一个 String 类型的 Value 时，需要引号
+    // 例如 Value("\"a string\"")
+    Value(const std::string&);
+    Value(const char[]);
+    Value(const Value&);                 // 拷贝构造
+    Value(Value&&) noexcept;             // 移动构造
+    Value& operator=(const Value&);      // 拷贝赋值
+    Value& operator=(Value&&) noexcept;  // 移动赋值
     ~Value() = default;
 
     // 值设置
@@ -73,9 +87,8 @@ public:
     void set(const Boolean&);
     void set(const Null&);
     void set(const String&);
-    //void set(const Object&);
-    //void set(const Array&);
-    //void set(const Value&);
+    void set(const Object&);
+    void set(const Array&);
     // 获取值类型
     Type getType() const;
     // 获取值
@@ -92,8 +105,7 @@ public:
 
 private:
     Type type_;
-    std::unique_ptr<Parseable> val_;
-    void setUnion(const Value& val);
+    std::shared_ptr<Parseable> val_;
 };
 
 // JSON 的键值对集合
@@ -150,6 +162,8 @@ public:
 
     // 在尾部添加元素
     void append(const Value&);
+    // 在尾部添加元素
+    void append(const std::string&);
     // 删除尾部元素
     void pop();
     // 在指定位置之前添加元素
@@ -174,6 +188,12 @@ public:
 
 private:
     Vector arr_;
+    // 检查引号数量是否合法
+    void checkQuoMark(const std::string&);
+    // 找出所有分割元素的 ',' 的位置
+    void findIndexes(const std::string&, std::vector<int>&);
+    // 去除空格和 {'[', ']', '\'', '"'}
+    std::string& removeBlank(std::string&);
 };
 
 // 数字类型，整数或浮点数，支持十六进制（负十六进制数会自动转化为整数）
