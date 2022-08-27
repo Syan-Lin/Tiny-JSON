@@ -122,22 +122,26 @@ tiny_json::Value::Value(const std::string& val){
     using namespace reg_ex;
     if(regex_match(val, kPatternNumber) || regex_match(val, kPatternHex)){
         val_ = std::make_shared<Number>(val);
+        type_ = Type::kNumber;
     }else if(regex_match(val, kPatternString)){
         // 去除引号
         std::string temp = val;
         temp.erase(0, 1);
         temp.erase(temp.size() - 1, 1);
         val_ = std::make_shared<String>(temp);
+        type_ = Type::kString;
     }else if(regex_match(val, kPatternBool)){
         val_ = std::make_shared<Boolean>(val);
+        type_ = Type::kBoolean;
     }else if(regex_match(val, kPatternNull)){
         val_ = std::make_shared<Null>(val);
+        type_ = Type::kNull;
     }else if(regex_match(val, kPatternArray)){
         val_ = std::make_shared<Array>(val);        // Todo
-
+        type_ = Type::kArray;
     }else if(regex_match(val, kPatternObj)){
         val_ = std::make_shared<Object>(val);       // Todo
-
+        type_ = Type::kObject;
     }else{
         std::cout << "[tiny_json_Error]: 字符串 " << val
         << " 不能转化为 Value 对象!" << std::endl;
