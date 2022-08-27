@@ -1,10 +1,83 @@
 #include <iostream>
 #include <string>
 #include <assert.h>
+#include <regex>
 #include "tiny_json.h"
 
 using namespace std;
 using namespace tiny_json;
+
+// 正则表达式测试
+void RegExTest(){
+    // Number 对象
+    // 实数正则式
+    regex pattern_number("[+-]?((\\d+|\\d*\\.\\d+)|(\\d+\\.\\d+)e[+-]?\\d+)");
+    assert(regex_match("1", pattern_number));
+    assert(regex_match("1.1", pattern_number));
+    assert(regex_match(".1", pattern_number));
+    assert(regex_match("0.1", pattern_number));
+    assert(regex_match("1.1e2", pattern_number));
+    assert(regex_match("1.1e+2", pattern_number));
+    assert(regex_match("1.1e-2", pattern_number));
+    assert(regex_match("+1", pattern_number));
+    assert(regex_match("+1.1", pattern_number));
+    assert(regex_match("+.1", pattern_number));
+    assert(regex_match("+0.1", pattern_number));
+    assert(regex_match("+1.1e2", pattern_number));
+    assert(regex_match("+1.1e+2", pattern_number));
+    assert(regex_match("+1.1e-2", pattern_number));
+    assert(regex_match("-1", pattern_number));
+    assert(regex_match("-1.1", pattern_number));
+    assert(regex_match("-.1", pattern_number));
+    assert(regex_match("-0.1", pattern_number));
+    assert(regex_match("-1.1e2", pattern_number));
+    assert(regex_match("-1.1e+2", pattern_number));
+    assert(regex_match("-1.1e-2", pattern_number));
+    // 十六进制正则式
+    regex pattern_hex("(0[xX]([a-fA-F\\d]*))|([a-fA-F]+[a-fA-F\\d]*)");
+    assert(regex_match("0xabcdef123", pattern_hex));
+    assert(regex_match("0Xabcdef123", pattern_hex));
+    assert(regex_match("0xABCDEF123", pattern_hex));
+    assert(!regex_match("123456789", pattern_hex));
+    assert(regex_match("abcdef123", pattern_hex));
+    assert(regex_match("ABCDEF123", pattern_hex));
+
+    // String 对象 '...' 模式或 "..." 模式
+    regex pattern_string("(\"(.|\\s)*\")|(\'(.|\\s)*\')");
+    assert(regex_match("\"0xabcdef123\"", pattern_string));
+    assert(regex_match("\"中文字符test\n\t\\\"", pattern_string));
+    assert(regex_match("\"中文字符测试\"", pattern_string));
+    assert(regex_match("\"This is a test \t !!!\"", pattern_string));
+    assert(regex_match("\"\u235afasd\"", pattern_string));
+    assert(regex_match("\'0xabcdef123\'", pattern_string));
+    assert(regex_match("\'中文字符test\n\t\\\'", pattern_string));
+    assert(regex_match("\'中文字符测试\'", pattern_string));
+    assert(regex_match("\'This is a test \t !!!\'", pattern_string));
+    assert(regex_match("\'\u235aunicode\'", pattern_string));
+
+    // Boolean 对象
+    regex pattern_bool("(true)|(false)");
+    assert(regex_match("true", pattern_bool));
+    assert(regex_match("false", pattern_bool));
+    assert(!regex_match("True", pattern_bool));
+    assert(!regex_match("False", pattern_bool));
+
+    // Null 对象
+    regex pattern_null("(null)");
+    assert(regex_match("null", pattern_null));
+    assert(!regex_match("Null", pattern_null));
+
+    // Array 对象 [...] 模式
+    regex pattern_array("\\[(.|\\s)*\\]");
+    assert(regex_match("[1,2,4521,\"Test\nTest\",]", pattern_array));
+
+    // Object 对象 ..:.. 模式
+    regex pattern_obj("(\"(.|\\s)+\":(.|\\s)+)|((.|\\s)+:(.|\\s)+)");
+    assert(regex_match("key: \"value\"", pattern_obj));
+    assert(regex_match("\"key\": \'value\'", pattern_obj));
+    assert(regex_match("key123_=+: \"value123_=\"", pattern_obj));
+    assert(regex_match("\"key123_=+\": 1.234e-5", pattern_obj));
+}
 
 // Number 类测试
 void NumberTest(){
@@ -210,10 +283,11 @@ void BooleanTest(){
 }
 
 int main(){
-    NumberTest();
+    // NumberTest();
     // BooleanTest();
     // StringTest();
     // NullTest();
+    // RegExTest();
 
     return 0;
 }
