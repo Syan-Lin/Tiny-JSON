@@ -81,7 +81,7 @@ void RegExTest(){
 
 // Number 类测试
 void NumberTest(){
-    // 四种初始化
+    // 五种初始化
     Number n1;                      // 默认为十进制 0
     Number n2(3.14);                // Number(double) 等价于 Number n2 = 3.14
     Number n3("0Xabc123");          // Number(char[]) 等价于 Number n3 = "abc123"
@@ -183,29 +183,29 @@ void StringTest(){
                                                 // 这里实际上会经过 String(char[]) -> String(string&&) -> String(String&&)
                                                 // 不过前两步是构造 String("move String") 这个右值对象
     assert(s1.get() == "test\nnext\tline\n");
-    assert(s1.getJSON() == "test\\nnext\\tline\\n");
-    assert(s1.parse() == "test\\nnext\\tline\\n");
-    assert(s1.getJSON() == "test\\nnext\\tline\\n");
+    assert(s1.getJSON() == "\"test\\nnext\\tline\\n\"");
+    assert(s1.parse() == "\"test\\nnext\\tline\\n\"");
+    assert(s1.getJSON() == "\"test\\nnext\\tline\\n\"");
     assert(s2.get() == "test\nnext\tline\n");
-    assert(s2.getJSON() == "test\\nnext\\tline\\n");
-    assert(s2.parse() == "test\\nnext\\tline\\n");
-    assert(s2.getJSON() == "test\\nnext\\tline\\n");
+    assert(s2.getJSON() == "\"test\\nnext\\tline\\n\"");
+    assert(s2.parse() == "\"test\\nnext\\tline\\n\"");
+    assert(s2.getJSON() == "\"test\\nnext\\tline\\n\"");
     assert(s3.get() == "a String");
-    assert(s3.getJSON() == "a String");
-    assert(s3.parse() == "a String");
-    assert(s3.getJSON() == "a String");
+    assert(s3.getJSON() == "\"a String\"");
+    assert(s3.parse() == "\"a String\"");
+    assert(s3.getJSON() == "\"a String\"");
     assert(s4.get() == "a string");
-    assert(s4.getJSON() == "a string");
-    assert(s4.parse() == "a string");
+    assert(s4.getJSON() == "\"a string\"");
+    assert(s4.parse() == "\"a string\"");
     assert(s4.get() == "a string");
     assert(s5.get() == "");
-    assert(s5.getJSON() == "");
-    assert(s5.parse() == "");
-    assert(s5.getJSON() == "");
+    assert(s5.getJSON() == "\"\"");
+    assert(s5.parse() == "\"\"");
+    assert(s5.getJSON() == "\"\"");
     assert(s6.get() == "move String");
-    assert(s6.getJSON() == "move String");
-    assert(s6.parse() == "move String");
-    assert(s6.getJSON() == "move String");
+    assert(s6.getJSON() == "\"move String\"");
+    assert(s6.parse() == "\"move String\"");
+    assert(s6.getJSON() == "\"move String\"");
 
     // 五种赋值
     String s7, s8, s9, s10, s11;
@@ -215,37 +215,38 @@ void StringTest(){
     s10 = string("test\nnext\tline\n");           // operator=(string&&)
     s11 = "test\nnext\tline\n";                   // operator=(char[])
     assert(s7.get() == "test\nnext\tline\n");
-    assert(s7.getJSON() == "test\\nnext\\tline\\n");
-    assert(s7.parse() == "test\\nnext\\tline\\n");
-    assert(s7.getJSON() == "test\\nnext\\tline\\n");
+    assert(s7.getJSON() == "\"test\\nnext\\tline\\n\"");
+    assert(s7.parse() == "\"test\\nnext\\tline\\n\"");
+    assert(s7.getJSON() == "\"test\\nnext\\tline\\n\"");
     assert(s8.get() == "test\nnext\tline\n");
-    assert(s8.getJSON() == "test\\nnext\\tline\\n");
-    assert(s8.parse() == "test\\nnext\\tline\\n");
-    assert(s8.getJSON() == "test\\nnext\\tline\\n");
+    cout << s8.getJSON() << endl;
+    assert(s8.getJSON() == "\"test\\nnext\\tline\\n\"");
+    assert(s8.parse() == "\"test\\nnext\\tline\\n\"");
+    assert(s8.getJSON() == "\"test\\nnext\\tline\\n\"");
     assert(s9.get() == "test\nnext\tline\n");
-    assert(s9.getJSON() == "test\\nnext\\tline\\n");
-    assert(s9.parse() == "test\\nnext\\tline\\n");
-    assert(s9.getJSON() == "test\\nnext\\tline\\n");
+    assert(s9.getJSON() == "\"test\\nnext\\tline\\n\"");
+    assert(s9.parse() == "\"test\\nnext\\tline\\n\"");
+    assert(s9.getJSON() == "\"test\\nnext\\tline\\n\"");
     assert(s10.get() == "test\nnext\tline\n");
-    assert(s10.getJSON() == "test\\nnext\\tline\\n");
-    assert(s10.parse() == "test\\nnext\\tline\\n");
-    assert(s10.getJSON() == "test\\nnext\\tline\\n");
+    assert(s10.getJSON() == "\"test\\nnext\\tline\\n\"");
+    assert(s10.parse() == "\"test\\nnext\\tline\\n\"");
+    assert(s10.getJSON() == "\"test\\nnext\\tline\\n\"");
     assert(s11.get() == "test\nnext\tline\n");
-    assert(s11.getJSON() == "test\\nnext\\tline\\n");
-    assert(s11.parse() == "test\\nnext\\tline\\n");
-    assert(s11.getJSON() == "test\\nnext\\tline\\n");
+    assert(s11.getJSON() == "\"test\\nnext\\tline\\n\"");
+    assert(s11.parse() == "\"test\\nnext\\tline\\n\"");
+    assert(s11.getJSON() == "\"test\\nnext\\tline\\n\"");
 
     // 功能测试
     s1.set("this is a message");
     assert(s1.get() == "this is a message");
-    assert(s1.getJSON() == "this is a message");
-    assert(s1.parse() == "this is a message");
-    assert(s1.getJSON() == "this is a message");
+    assert(s1.getJSON() == "\"this is a message\"");
+    assert(s1.parse() == "\"this is a message\"");
+    assert(s1.getJSON() == "\"this is a message\"");
     s1.reset();
     assert(s1.get() == "");
-    assert(s1.getJSON() == "");
-    assert(s1.parse() == "");
-    assert(s1.getJSON() == "");
+    assert(s1.getJSON() == "\"\"");
+    assert(s1.parse() == "\"\"");
+    assert(s1.getJSON() == "\"\"");
     assert(s1.parseable("right"));
     assert(s1.parseable());
 }
@@ -285,9 +286,11 @@ void BooleanTest(){
 int main(){
     // NumberTest();
     // BooleanTest();
-    // StringTest();
+    StringTest();
     // NullTest();
     // RegExTest();
+    // ValueTest();
+    ArrayTest();
 
     return 0;
 }
