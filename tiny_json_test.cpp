@@ -102,12 +102,13 @@ void ValueTest(){
     s2.initFromJSON("true");        // 初始化为 Boolean 类型
     s3.initFromJSON("null");        // 初始化为 Null 类型
     s4.initFromJSON("\"abc\"");     // 初始化为 String 类型
-    // s5.initFromJSON("[1, 2, 3]");          // 初始化为 Array 类型
+    s5.initFromJSON("[1, 2, 3]");   // 初始化为 Array 类型
     // Value s1("\"a\": 1");           // 初始化为 Object 类型
     assert(s1.getType() == Type::kNumber && s1.parse() == "3.14");
     assert(s2.getType() == Type::kBoolean && s2.parse() == "true");
     assert(s3.getType() == Type::kNull && s3.parse() == "null");
     assert(s4.getType() == Type::kString && s4.parse() == "\"abc\"");
+    assert(s5.getType() == Type::kArray && s5.parse() == "[1, 2, 3]");
 
     // 五种赋值
     s1 = 5.68;      // operator=(double)
@@ -138,6 +139,8 @@ void ValueTest(){
     assert(v3.getType() == Type::kNumber && v3.parse() == "2");
     assert(v1.getType() == Type::kBoolean && v1.parse() == "true");
     assert(v2.getType() == Type::kString && v2.parse() == "\"abc\"");
+    v8.set(Array({1, 2 ,3}));
+    assert(v8.getType() == Type::kArray && v8.parse() == "[1, 2, 3]");
 
     // 错误测试
     // static_cast<Boolean&>(v2.get()).set(false);     // 类型错误，行为未定义，在使用之前请检查类型!
@@ -297,10 +300,6 @@ void NullTest(){
     assert(n1.parse() == "null");
     assert(n2.parse() == "null");
 
-    // 功能测试
-    assert(n1.parseable("null"));
-    assert(n1.parseable());
-
     // 错误测试
     Null n3;
     n3.initFromJSON("abc");     // 无法转成 Null 对象
@@ -391,8 +390,6 @@ void StringTest(){
     assert(s1.getJSON() == "\"\"");
     assert(s1.parse() == "\"\"");
     assert(s1.getJSON() == "\"\"");
-    assert(s1.parseable("right"));
-    assert(s1.parseable());
 }
 
 // Boolean 类测试
@@ -420,8 +417,6 @@ void BooleanTest(){
     b2.reset();
     assert(b1.get());
     assert(!b2.get());
-    assert(b1.parseable());
-    assert(!b1.parseable("can't parse"));
     assert(b1.parse() == "true");
     assert(b2.parse() == "false");
     // 错误测试

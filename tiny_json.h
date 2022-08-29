@@ -29,7 +29,8 @@ enum class Type{
     kString,
     kNull,
     kObject,
-    kArray
+    kArray,
+    kValue
 };
 
 enum class NumberType{
@@ -54,12 +55,8 @@ class Parseable{
 public:
     // 将对象输出为字符串
     virtual std::string parse() = 0;
-    // 对象是否能转化为 JSON 文件
-    virtual bool parseable() const = 0;
     // 用字符串初始化对象
     virtual void initFromJSON(const std::string&) = 0;
-    // JSON 文件是否能转化为对象
-    virtual bool parseable(const std::string&) const = 0;
 };
 
 // JSON 键值对中的值：
@@ -106,10 +103,6 @@ public:
 
     // 将值输出为字符串
     std::string parse() override;
-    // JSON 对象能够转化为 Value 对象
-    bool parseable(const std::string&) const override;
-    // Value 对象能否转化为 JSON 对象
-    bool parseable() const override;
     // 用字符串初始化对象
     void initFromJSON(const std::string&) override;
 
@@ -147,10 +140,6 @@ public:
 
     // 将键值对集合输出为字符串
     std::string parse() override;
-    // JSON 对象能够转化为 Object 对象
-    bool parseable(const std::string&) const override;
-    // Object 对象能否转化为 JSON 对象
-    bool parseable() const override;
     // 用字符串初始化对象
     void initFromJSON(const std::string&) override;
 
@@ -227,10 +216,6 @@ public:
 
     // 将数组输出为字符串
     std::string parse() override;
-    // JSON 对象能够转化为 Array 对象
-    bool parseable(const std::string&) const override;
-    // Array 对象能否转化为 JSON 对象
-    bool parseable() const override;
     // 用字符串初始化对象
     void initFromJSON(const std::string&) override;
 
@@ -270,10 +255,6 @@ public:
 
     // 将数字输出为字符串
     std::string parse() override;
-    // JSON 对象能够转化为 Number 对象
-    bool parseable(const std::string&) const override;
-    // Number 对象能否转化为 JSON 对象
-    bool parseable() const override;
     // 设置数字输出格式，当类型为 kInteger 或 kHex 时，第二个参数没有作用
     void parseSetting(NumberType, size_t = 6);
     // 用字符串初始化对象
@@ -295,10 +276,6 @@ public:
 
     // 输出 Null 字符串
     std::string parse() override;
-    // JSON 对象能够转化为 Null 对象
-    bool parseable(const std::string&) const override;
-    // Null 对象能否转化为 JSON 对象
-    bool parseable() const override;
     // 用字符串初始化对象
     void initFromJSON(const std::string&) override;
 
@@ -337,10 +314,6 @@ public:
 
     // 输出字符串
     std::string parse() override;
-    // JSON 对象能够转化为 String 对象
-    bool parseable(const std::string&) const override;
-    // String 对象能否转化为 JSON 对象
-    bool parseable() const override;
     // 用字符串初始化对象
     void initFromJSON(const std::string&) override;
 
@@ -372,10 +345,6 @@ public:
 
     // 将布尔值输出为字符串
     std::string parse() override;
-    // JSON 对象能够转化为 Boolean 对象
-    bool parseable(const std::string&) const override;
-    // Boolean 对象能否转化为 JSON 对象
-    bool parseable() const override;
     // 用字符串初始化对象
     void initFromJSON(const std::string&) override;
 
@@ -386,6 +355,10 @@ private:
 // 将对象转化为字符串
 extern std::string parse(const Object&);
 // 将字符串转化为对象
-// extern Object parse(const std::string);
+// extern Object parse(const std::string&, Type type = Type::kObject);
+// 判断字符串能否转化为对象
+extern bool parseable(const std::string&, Type type = Type::kObject);
+// 判断对象能否可转化为字符串（可能出现环导致死循环）
+bool parseable(const tiny_json::Object&);
 
 }
