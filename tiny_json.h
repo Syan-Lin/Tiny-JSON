@@ -72,6 +72,8 @@ public:
     Value(const String&);
     Value(const Object&);
     Value(const Array&);
+    Value(const double);                 // 基础类型初始化
+    Value(const bool);                   // 基础类型初始化
     // 用字符串初始化一个 String 类型的 Value 时，需要引号
     // 例如 Value("\"a string\"")
     Value(const std::string&);
@@ -80,6 +82,8 @@ public:
     Value(Value&&) noexcept;             // 移动构造
     Value& operator=(const Value&);      // 拷贝赋值
     Value& operator=(Value&&) noexcept;  // 移动赋值
+    Value& operator=(const double);
+    Value& operator=(const bool);
     ~Value() = default;
 
     // 值设置
@@ -89,6 +93,8 @@ public:
     void set(const String&);
     void set(const Object&);
     void set(const Array&);
+    void set(const double);
+    void set(const bool);
     // 获取值类型
     Type getType() const;
     // 获取值
@@ -130,6 +136,8 @@ public:
     void set(const Key&, const Value&);
     // 根据键获得值
     Value& get(const Key&);
+    // 是否有该键值
+    bool has(const Key&);
     // 清空键值对集合
     void reset();
 
@@ -304,6 +312,7 @@ public:
     Boolean(const char[]);
     Boolean(const Boolean&);                    // 拷贝构造
     Boolean& operator=(const Boolean&);         // 拷贝赋值
+    Boolean& operator=(const bool);
     ~Boolean() = default;
 
     // 设置布尔值

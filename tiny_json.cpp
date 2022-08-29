@@ -71,13 +71,14 @@ void tiny_json::Object::set(const Key& key, const Value& val){
     kv_map_[key] = val;
 }
 tiny_json::Value& tiny_json::Object::get(const Key& key){
-    if(kv_map_.find(key) != kv_map_.end()){
-        return kv_map_[key];
-    }else{
+    if(kv_map_.find(key) == kv_map_.end()){
         std::cout << "[tiny_json_Error_Object]: Key: " << key
-        << " 未找到!" << std::endl;
-        throw("Vector Boundary Error!");
+        << " 未找到，将产生未定义行为!" << std::endl;
     }
+    return kv_map_[key];
+}
+bool tiny_json::Object::has(const Key& key){
+    return kv_map_.find(key) != kv_map_.end();
 }
 
 std::string tiny_json::Object::parse(){
@@ -150,6 +151,8 @@ tiny_json::Value::Value(const std::string& val){
 tiny_json::Value::Value(const Object& val): type_(Type::kObject), val_(std::make_shared<Object>(val)){}
 tiny_json::Value::Value(const Array& val): type_(Type::kArray), val_(std::make_shared<Array>(val)){}
 tiny_json::Value::Value(const Value& val): type_(val.type_), val_(val.val_){}
+tiny_json::Value::Value(const double val): type_(Type::kNumber), val_(std::make_shared<Number>(val)){}
+tiny_json::Value::Value(const bool val): type_(Type::kBoolean), val_(std::make_shared<Boolean>(val)){}
 // 没有定义移动构造函数的类可能存在 Bug ???
 tiny_json::Value::Value(Value&& val) noexcept{
     type_ = val.type_;
@@ -204,6 +207,24 @@ tiny_json::Value& tiny_json::Value::operator=(Value&& val) noexcept{
     }
     return *this;
 }
+tiny_json::Value& tiny_json::Value::operator=(const double val){
+    if(type_ == Type::kNumber){
+        static_cast<Number&>(*val_).set(val);
+    }else{
+        type_ = Type::kNumber;
+        val_ = std::make_shared<Number>(val);
+    }
+    return *this;
+}
+tiny_json::Value& tiny_json::Value::operator=(const bool val){
+    if(type_ == Type::kBoolean){
+        static_cast<Boolean&>(*val_).set(val);
+    }else{
+        type_ = Type::kBoolean;
+        val_ = std::make_shared<Number>(val);
+    }
+    return *this;
+}
 
 // 功能成员
 void tiny_json::Value::set(const Number& val){
@@ -229,6 +250,22 @@ void tiny_json::Value::set(const Object& val){
 void tiny_json::Value::set(const Array& val){
     type_ = Type::kArray;
     val_ = std::make_shared<Array>(val);
+}
+void tiny_json::Value::set(const double val){
+    if(type_ == Type::kNumber){
+        static_cast<Number&>(*val_).set(val);
+    }else{
+        type_ = Type::kNumber;
+        val_ = std::make_shared<Number>(val);
+    }
+}
+void tiny_json::Value::set(const bool val){
+    if(type_ == Type::kBoolean){
+        static_cast<Boolean&>(*val_).set(val);
+    }else{
+        type_ = Type::kBoolean;
+        val_ = std::make_shared<Number>(val);
+    }
 }
 tiny_json::Type tiny_json::Value::getType() const { return type_; }
 tiny_json::Parseable& tiny_json::Value::get(){ return *val_; }
@@ -258,7 +295,7 @@ std::string tiny_json::Value::parse(){
             return static_cast<Object&>(*val_).parse();
             break;
     }
-    std::cout << "[tiny_json_Error]: Value 对象错误!" << std::endl;
+    std::cout << "[tiny_json_Error_Value]: Value 对象错误!" << std::endl;
     return "";
 }
 bool tiny_json::Value::parseable(const std::string& val) const {
@@ -282,7 +319,7 @@ bool tiny_json::Value::parseable(const std::string& val) const {
             return static_cast<Object&>(*val_).parseable(val);
             break;
     }
-    std::cout << "[tiny_json_Error]: Value 对象错误!" << std::endl;
+    std::cout << "[tiny_json_Error_Value]: Value 对象错误!" << std::endl;
     return false;
 }
 bool tiny_json::Value::parseable() const {
@@ -306,7 +343,7 @@ bool tiny_json::Value::parseable() const {
             return static_cast<Object&>(*val_).parseable();
             break;
     }
-    std::cout << "[tiny_json_Error]: Value 对象错误!" << std::endl;
+    std::cout << "[tiny_json_Error_Value]: Value 对象错误!" << std::endl;
     return false;
 }
 
@@ -348,12 +385,12 @@ tiny_json::Array::Array(const std::string& val){
             removeBlank(element1);
             removeBlank(element2);
             append(element1);
-            append(element2);
             for(int i = 1; i < size; i++){
-                std::string element = val.substr(indexes[i-1] + 1, indexes[i] - indexes[i-1]);
+                std::string element = val.substr(indexes[i-1] + 1, indexes[i] - indexes[i-1] - 1);
                 removeBlank(element);
                 append(element);
             }
+            append(element2);
         }
     }else{
         std::cout << "[tiny_json_Error]: 字符串 " << val
@@ -378,13 +415,11 @@ tiny_json::Value& tiny_json::Array::operator[](size_t index){
     return get(index);
 }
 tiny_json::Value& tiny_json::Array::get(size_t index){
-    if(index >= 0 && index < arr_.size()){
-        return arr_[index];
-    }else{
-        std::cout << "[tiny_json_Error]: index:  " << index
-        << " 超出 Array 对象大小限制!" << std::endl;
-        throw("Vector Boundary Error!");
+    if(!(index >= 0 && index < arr_.size())){
+        std::cout << "[tiny_json_Error_Array]: index:  " << index
+        << " 越界，行为未定义! at: " << parse() << std::endl;
     }
+    return arr_[index];
 }
 size_t tiny_json::Array::size() const { return arr_.size(); }
 void tiny_json::Array::reset(){ arr_.clear(); }
@@ -394,26 +429,24 @@ void tiny_json::Array::pop(){
     if(arr_.size() > 0){
         arr_.pop_back();
     }else{
-        std::cout << "[tiny_json_Error]: Array 对象没有元素可以 pop!" << std::endl;
-        throw("Vector Boundary Error!");
+        std::cout << "[tiny_json_Error_Array]: Array 对象没有元素可以 pop! at:"
+        << parse() << std::endl;
     }
 }
 void tiny_json::Array::add(size_t index, const Value& val){
     if(index >= 0 && index < arr_.size()){
         arr_.emplace(arr_.begin() + index, val);
     }else{
-        std::cout << "[tiny_json_Error]: index:  " << index
-        << " 超出 Array 对象大小限制!" << std::endl;
-        throw("Vector Boundary Error!");
+        std::cout << "[tiny_json_Error_Array]: index:  " << index
+        << " 添加元素越界! at: " << parse() << std::endl;
     }
 }
 void tiny_json::Array::del(size_t index){
     if(index >= 0 && index < arr_.size()){
         arr_.erase(arr_.begin() + index);
     }else{
-        std::cout << "[tiny_json_Error]: index:  " << index
-        << " 超出 Array 对象大小限制!" << std::endl;
-        throw("Vector Boundary Error!");
+        std::cout << "[tiny_json_Error_Array]: index:  " << index
+        << " 删除元素越界! at: " << parse() << std::endl;
     }
 }
 void tiny_json::Array::set(size_t index, const Value& val){
@@ -421,8 +454,7 @@ void tiny_json::Array::set(size_t index, const Value& val){
         arr_[index] = val;
     }else{
         std::cout << "[tiny_json_Error]: index:  " << index
-        << " 超出 Array 对象大小限制!" << std::endl;
-        throw("Vector Boundary Error!");
+        << " 设置元素越界! at: " << parse() << std::endl;
     }
 }
 
@@ -487,6 +519,9 @@ std::string& tiny_json::Array::removeBlank(std::string& val){
 }
 
 std::string tiny_json::Array::parse(){
+    if(arr_.size() == 0){
+        return "[]";
+    }
     std::string result;
     for(int i = 0; i < arr_.size(); i++){
         if(i == 0){
@@ -930,6 +965,10 @@ tiny_json::Boolean::Boolean(const std::string& val){
 }
 tiny_json::Boolean& tiny_json::Boolean::operator=(const Boolean& val){
     bool_ = val.bool_;
+    return *this;
+}
+tiny_json::Boolean& tiny_json::Boolean::operator=(const bool val){
+    bool_ = val;
     return *this;
 }
 

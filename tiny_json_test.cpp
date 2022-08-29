@@ -2,10 +2,109 @@
 #include <string>
 #include <assert.h>
 #include <regex>
+#include <Windows.h>
 #include "tiny_json.h"
 
 using namespace std;
 using namespace tiny_json;
+
+// Array 类测试
+// TODO Object 和 Array的测试
+void ArrayTest(){
+    // 六种初始化
+    Array a1;
+    Array a2({Value(3.14),                      // Array(initializer_list)
+            Value(false),
+            Value(),
+            Value(String("abc"))});
+    Array a3(a2);                                       // Array(Array&)
+    Array a4("[3.14, false, null, \"qwe\"]");           // Array(char[])
+    Array a5(string("[3.14, false, null, \"qwe\"]"));   // Array(string&)
+    Array a6(move(Array("[1, 2, 3]")));                 // Array(Array&&)
+    assert(a1.size() == 0 && a1.parse() == "[]");
+    assert(a2.size() == 4 && a2.parse() == "[3.14, false, null, \"abc\"]");
+    assert(a3.size() == 4 && a3.parse() == "[3.14, false, null, \"abc\"]");
+    assert(a4.size() == 4 && a4.parse() == "[3.14, false, null, \"qwe\"]");
+    assert(a5.size() == 4 && a5.parse() == "[3.14, false, null, \"qwe\"]");
+    assert(a6.size() == 3 && a6.parse() == "[1, 2, 3]");
+
+    // 两种赋值
+    Array a7, a8;
+    a7 = a2;
+    a8 = Array("[1, 2, 3]");
+    assert(a7.size() == 4 && a7.parse() == "[3.14, false, null, \"abc\"]");
+    assert(a8.size() == 3 && a8.parse() == "[1, 2, 3]");
+
+    // 功能测试
+    a7[0].set(6.28);
+    a7[1].set(true);
+
+}
+
+// Value 类测试
+// TODO Object 和 Array的测试
+// TODO 基础类型初始化
+void ValueTest(){
+    // 十一种初始化
+    Value v1;                       // 默认为 null
+    Value v2(3.14);                 // Value(const Number&) 等价于 Value v2(Number(3.14))
+    Value v3(true);                 // Value(const Boolean&) 等价于 v3(Boolean(true))
+    Value v4(Null("null"));         // Value(const Null&) 等价于 Value v4 = Null()
+    Value v5(String("abc"));        // Value(const String&) 等价于 Value v5 = String("abc")
+    // TODO
+    // Value v6(Array());
+    // Value v6_ = Array();
+    // Value v7(Object());
+    // Value v7_ = Object();
+    Value v8(v2);                           // Value(Value&) 等价于 Value v6 = v2
+    Value v9(move(Value(Boolean(true))));   // Value(Value&&) 等价于 Value v7 = Value(Boolean(true))
+    assert(v1.getType() == Type::kNull && v1.parse() == "null");
+    assert(v2.getType() == Type::kNumber && v2.parse() == "3.14");
+    assert(v3.getType() == Type::kBoolean && v3.parse() == "true");
+    assert(v4.getType() == Type::kNull && v4.parse() == "null");
+    assert(v5.getType() == Type::kString && v5.parse() == "\"abc\"");
+    assert(v8.getType() == Type::kNumber && v8.parse() == "3.14");
+    assert(v9.getType() == Type::kBoolean && v9.parse() == "true");
+
+    // 字符串初始化 Value(string("")) 调用 Value(string&) Value("") 调用 Value(char[])
+    Value s1("3.14");               // 初始化为 Number 类型
+    Value s2("true");               // 初始化为 Boolean 类型
+    Value s3("null");               // 初始化为 Null 类型
+    Value s4("\"abc\"");            // 初始化为 String 类型
+    // Value s1("[1, 2, 3]");          // 初始化为 Array 类型
+    // Value s1("\"a\": 1");           // 初始化为 Object 类型
+    assert(s1.getType() == Type::kNumber && s1.parse() == "3.14");
+    assert(s2.getType() == Type::kBoolean && s2.parse() == "true");
+    assert(s3.getType() == Type::kNull && s3.parse() == "null");
+    assert(s4.getType() == Type::kString && s4.parse() == "\"abc\"");
+
+    // 四种赋值
+    Value v6, v7, v8, v9;
+    v6 = v2;                        // operator(const Value&)
+    v7 = Value(Null());             // operator(Value&&)
+    assert(v6.getType() == Type::kNumber && v6.parse() == "3.14");
+    assert(v7.getType() == Type::kNull && v7.parse() == "null");
+    v6 = false;
+    v7 = true;
+    v8 = 1.12;
+    v9 = 2.25;
+    assert(v6.getType() == Type::kBoolean && v6.parse() == "false");
+    assert(v7.getType() == Type::kBoolean && v7.parse() == "true");
+
+    // 功能测试
+    static_cast<Number&>(v2.get()).set(6.15);
+    static_cast<Boolean&>(v3.get()).set(false);
+    static_cast<String&>(v5.get()).set("ABC");
+    assert(v2.getType() == Type::kNumber && v2.parse() == "6.15");
+    assert(v3.getType() == Type::kBoolean && v3.parse() == "false");
+    assert(v5.getType() == Type::kString && v5.parse() == "\"ABC\"");
+    v2.reset();
+    assert(v2.getType() == Type::kNull && v2.parse() == "null");
+
+    // 错误测试
+    static_cast<Boolean&>(v2.get()).set(false);     // 类型错误，行为未定义，在使用之前请检查类型!
+    Value e("qwe");                                 // 无法转化为任何类型
+}
 
 // 正则表达式测试
 void RegExTest(){
@@ -284,9 +383,12 @@ void BooleanTest(){
 }
 
 int main(){
+    // cmd 中文编码改为 UTF-8
+    system("chcp 65001");
+
     // NumberTest();
     // BooleanTest();
-    StringTest();
+    // StringTest();
     // NullTest();
     // RegExTest();
     // ValueTest();
