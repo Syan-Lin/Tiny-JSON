@@ -257,7 +257,7 @@ public:
 class String : public Parseable{
 public:
     // 拷贝控制成员
-    String() = default;
+    String();
     String(const std::string&);
     String(const char[]);
     String(const String&);                      // 拷贝构造
@@ -275,7 +275,7 @@ public:
     // 获取字符串
     std::string get() const;
     // 获取 JSON 字符串
-    std::string getJSON() const;
+    std::string getJSON();
     // 重置字符串
     void reset();
 
@@ -291,7 +291,7 @@ private:
     std::string parsed_str_;
     bool is_parsed_ = false;
     void parseForPrint();
-    void parseForFile();
+    void parseForJSON();
 };
 
 // 布尔类型

@@ -722,33 +722,42 @@ bool tiny_json::Null::parseable() const { return true; }
 ***************************/
 
 // 拷贝控制成员
+tiny_json::String::String(){ parse(); }
 tiny_json::String::String(const std::string& val): str_(val){ parse(); }
 tiny_json::String::String(const char val[]): String(std::string(val)){}
-tiny_json::String::String(const String& val): str_(val.str_), parsed_str_(val.parsed_str_){}
-tiny_json::String::String(String&& val) noexcept : str_(std::move(val.str_)), parsed_str_(std::move(val.parsed_str_)){}
+tiny_json::String::String(const String& val): str_(val.str_), parsed_str_(val.parsed_str_)
+                                                , is_parsed_(val.is_parsed_){}
+tiny_json::String::String(String&& val) noexcept : str_(std::move(val.str_))
+                                                , parsed_str_(std::move(val.parsed_str_))
+                                                , is_parsed_(val.is_parsed_){}
 tiny_json::String::String(std::string&& val) noexcept : str_(std::move(val)){ parse(); }
 tiny_json::String& tiny_json::String::operator=(const String& val){
     str_ = val.str_;
     parsed_str_ = val.parsed_str_;
+    is_parsed_ = val.is_parsed_;
     return *this;
 }
 tiny_json::String& tiny_json::String::operator=(String&& val) noexcept{
     str_ = std::move(val.str_);
     parsed_str_ = std::move(val.parsed_str_);
+    is_parsed_ = val.is_parsed_;
     return *this;
 }
 tiny_json::String& tiny_json::String::operator=(const std::string& val){
     str_ = val;
+    is_parsed_ = false;
     parse();
     return *this;
 }
 tiny_json::String& tiny_json::String::operator=(std::string&& val) noexcept{
     str_ = std::move(val);
+    is_parsed_ = false;
     parse();
     return *this;
 }
 tiny_json::String& tiny_json::String::operator=(const char val[]){
     str_ = std::string(val);
+    is_parsed_ = false;
     parse();
     return *this;
 }
@@ -757,21 +766,25 @@ tiny_json::String& tiny_json::String::operator=(const char val[]){
 void tiny_json::String::set(const std::string& val){
     str_ = val;
     is_parsed_ = true;
-    parseForFile();
+    parseForJSON();
 }
 std::string tiny_json::String::get() const { return str_; }
-std::string tiny_json::String::getJSON() const { return parsed_str_; }
-void tiny_json::String::reset(){ str_.clear(); parsed_str_.clear(); }
+std::string tiny_json::String::getJSON(){ return parse(); }
+void tiny_json::String::reset(){
+    str_.clear();
+    parsed_str_.clear();
+    is_parsed_ = false;
+}
 
 std::string tiny_json::String::parse() {
     if(is_parsed_){
         return parsed_str_;
     }else if(!parseable()){
-        return "";
+        return "\"\"";
     }
     is_parsed_ = true;
     parseForPrint();
-    parseForFile();
+    parseForJSON();
 
     return parsed_str_;
 }
@@ -820,7 +833,7 @@ void tiny_json::String::parseForPrint(){
     }
     str_ = str;
 }
-void tiny_json::String::parseForFile(){
+void tiny_json::String::parseForJSON(){
     std::string str;
     for(int i = 0; i < str_.size(); i++){
         switch(str_[i]){
@@ -857,7 +870,7 @@ void tiny_json::String::parseForFile(){
                 break;
         }
     }
-    parsed_str_ = str;
+    parsed_str_ = "\"" + str + "\"";
 }
 bool tiny_json::String::parseable(const std::string& str) const {
     for(int i = 0; i < str.size(); i++){
