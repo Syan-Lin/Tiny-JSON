@@ -118,10 +118,9 @@ class Object : public Parseable{
 public:
     // 拷贝控制成员
     Object() = default;
-    Object(const std::string&);
     Object(const Object&);                // 拷贝构造
     Object(Object&&) noexcept;            // 移动构造
-    Object& operator=(const Object&);           // 拷贝赋值
+    Object& operator=(const Object&);     // 拷贝赋值
     Object& operator=(Object&&) noexcept; // 移动赋值
     ~Object() = default;
 
@@ -135,6 +134,8 @@ public:
     Value& get(const Key&);
     // 是否有该键值
     bool has(const Key&);
+    // Map 大小
+    size_t size();
     // 清空键值对集合
     void reset();
 
@@ -145,6 +146,8 @@ public:
 
 private:
     kvMap kv_map_;
+    // 生成键值对
+    void initKV(const std::string&);
 };
 
 // 存储 Value 的数组
@@ -221,12 +224,6 @@ public:
 
 private:
     Vector arr_;
-    // 检查引号数量是否合法
-    void checkQuoMark(const std::string&);
-    // 找出所有分割元素的 ',' 的位置
-    void findIndexes(const std::string&, std::vector<int>&);
-    // 去除空格和 { [, ], ', " }
-    std::string& removeBlank(std::string&);
     // 检查数组越界
     bool checkIndex(const size_t index);
     bool checkIndexAdd(const size_t index);
@@ -252,6 +249,8 @@ public:
     void reset();
     // 是否是十六进制
     bool isHex() const;
+    // 返回 parse 类型
+    NumberType getType() const;
 
     // 将数字输出为字符串
     std::string parse() override;
@@ -314,7 +313,7 @@ public:
 
     // 输出字符串
     std::string parse() override;
-    // 用字符串初始化对象
+    // 用字符串初始化对象，该字符串需要两个引号包裹
     void initFromJSON(const std::string&) override;
 
 private:
