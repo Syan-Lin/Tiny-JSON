@@ -8,6 +8,41 @@
 using namespace std;
 using namespace tiny_json;
 
+// 外部函数测试
+void FuncTest(){
+    string json = "{"
+        "\"integer\": 1,"
+        "\"float\": 1.1,"
+        "\"string\": \"Hello \\\"World!'\","
+        "\"bool\": true,"
+        "\"array\": ["
+        "1,"
+        "\"string\","
+        "false,"
+        "[\"peter\", \"bob\"],"
+        "{\"name\": \"[Anna]\", \"age\": 16}"
+        "],"
+        "\"object\":{"
+        "\"name\": \"Anna\","
+        "\"age\": 16"
+        "}"
+        "}";
+    Object o4 = parse(json);
+    assert(o4.size() == 6 && parse(o4) == "{\"array\": [1, \"string\", false, [\"peter\", \"bob\"], "
+    "{\"age\": 16, \"name\": \"[Anna]\"}], \"bool\": true, \"float\": 1.1, \"integer\": 1, "
+    "\"object\": {\"age\": 16, \"name\": \"Anna\"}, \"string\": \"Hello \\\"World!'\"}");
+
+    // 环测试，由于是复制操作，所以不会产生环
+    Object circle;
+    Object temp;
+    temp.add("obj", Value(circle));
+    circle.add("str", Value("abc"));
+    circle.add("arrar", Value(Array({1, 2, circle})));
+    circle.add("obj", Value(circle));
+    circle.add("str2", Value("ABC"));
+    assert(circle.parse() == "{\"arrar\": [1, 2, {\"str\": \"abc\"}], \"obj\": {\"arrar\": [1, 2, {\"str\": \"abc\"}], \"str\": \"abc\"}, \"str\": \"abc\", \"str2\": \"ABC\"}");
+}
+
 // Object 类测试，覆盖率 100%
 void ObjectTest(){
     // 四种初始化
@@ -57,7 +92,7 @@ void ObjectTest(){
         "}";
     Object o4;
     o4.initFromJSON(json);
-    assert(o4.size() == 6 &&o4.parse() == "{\"array\": [1, \"string\", false, [\"peter\", \"bob\"], "
+    assert(o4.size() == 6 && o4.parse() == "{\"array\": [1, \"string\", false, [\"peter\", \"bob\"], "
     "{\"age\": 16, \"name\": \"[Anna]\"}], \"bool\": true, \"float\": 1.1, \"integer\": 1, "
     "\"object\": {\"age\": 16, \"name\": \"Anna\"}, \"string\": \"Hello \\\"World!'\"}");
 
@@ -82,7 +117,6 @@ void ArrayTest(){
     assert(a3.size() == 4 && a3.parse() == "[3.14, false, null, \"abc\"]");
     assert(a4.size() == 3 && a4.parse() == "[1, 2, 3]");
     assert(a5.size() == 4 && a5.parse() == "[3.14, false, null, \"qwe\"]");
-    cout << a5_.parse() << endl;
     assert(a5_.size() == 1 && a5_.parse() == "[3.14]");
 
     // 两种赋值
@@ -581,6 +615,7 @@ int main(){
     ArrayTest();
     ObjectTest();
     RegExTest();
+    FuncTest();
 
     return 0;
 }
