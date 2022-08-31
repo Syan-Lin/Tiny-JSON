@@ -8,8 +8,6 @@
 
 namespace tiny_json{
 
-// 是否输出调试信息
-extern bool DEBUG;
 // 是否使用 JSON5 标准
 extern bool JSON5;
 
@@ -277,7 +275,6 @@ public:
     std::string parse() override;
     // 用字符串初始化对象
     void initFromJSON(const std::string&) override;
-
 };
 
 // 字符串类型
@@ -352,12 +349,10 @@ private:
 };
 
 // 将对象转化为字符串
-extern std::string parse(const Object&);
+extern std::string parse(Object&);
 // 将字符串转化为对象
-// extern Object parse(const std::string&, Type type = Type::kObject);
+extern Object parse(const std::string&);
 // 判断字符串能否转化为对象
 extern bool parseable(const std::string&, Type type = Type::kObject);
-// 判断对象能否可转化为字符串（可能出现环导致死循环）
-bool parseable(const tiny_json::Object&);
 
 }

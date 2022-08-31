@@ -12,6 +12,7 @@
 #include <iostream>
 #include <regex>
 #include <stack>
+#include <algorithm>
 
 bool tiny_json::JSON5 = true;
 
@@ -20,20 +21,26 @@ bool tiny_json::JSON5 = true;
 * @date     2022/8/30
 * @brief    工具函数
 ***************************/
+
 // 检查能否转化为数字
 static bool parseableNumber(const std::string&);
 // 检查能否转化为数组
 static bool parseableArray(const std::string&);
 // 检查能否转化为字符串
 static bool parseableString(const std::string&);
+// 检查能否转化为对象
+static bool parseableObject(const std::string&);
 // 检查引号和括号是否合法并找到分割 ',' 的位置
 static bool checkQuoMark(const std::string&, std::vector<int>&);
 // 去除空格和包裹字符
 static std::string& removeBlank(std::string&);
 
-bool tiny_json::parseable(const tiny_json::Object&) {
-    return true;
-}
+/**************************
+* @author   Yuan.
+* @date     2022/8/31
+* @brief    外部调用
+***************************/
+
 bool tiny_json::parseable(const std::string& str, tiny_json::Type type){
     using namespace tiny_json;
     switch(type){
@@ -52,16 +59,18 @@ bool tiny_json::parseable(const std::string& str, tiny_json::Type type){
         case Type::kArray:
             return parseableArray(str);
         case Type::kObject:
-            return true;    //TODO
+            return parseableObject(str);
     }
     return false;
 }
-std::string tiny_json::parse(const tiny_json::Object& obj){
-    return "hhh";
+std::string tiny_json::parse(Object& obj){
+    return obj.parse();
 }
-// tiny_json::Object tiny_json::parse(const std::string str){
-//     return Object();
-// }
+tiny_json::Object tiny_json::parse(const std::string& str){
+    tiny_json::Object o;
+    o.initFromJSON(str);
+    return o;
+}
 
 /**************************
 * @author   Yuan.
@@ -135,27 +144,32 @@ void tiny_json::Object::initFromJSON(const std::string& str){
         << " 不能转化为 Object 对象!" << std::endl;
         return;
     }
-    std::string str_noblank = str;
-    removeBlank(str_noblank);
-    std::vector<int> indexes;
-    if(!checkQuoMark(str_noblank, indexes)){
-        return;
-    }
-    if(indexes.size() == 0){
-        // 特殊情况，只有一个元素
-        initKV(str_noblank);
-    }else{
-        // 第一个和最后一个元素特殊处理
-        int size = indexes.size();
-        Value v;
-        std::string element1 = str_noblank.substr(0, indexes[0]);
-        std::string element2 = str_noblank.substr(indexes[size-1] + 1, str_noblank.size() - indexes[size-1]);
-        initKV(element1);
-        for(int i = 1; i < size; i++){
-            std::string element = str_noblank.substr(indexes[i-1] + 1, indexes[i] - indexes[i-1] - 1);
-            initKV(element);
+    if(parseable(str, Type::kObject)){
+        std::string str_noblank = str;
+        removeBlank(str_noblank);
+        std::vector<int> indexes;
+        if(!checkQuoMark(str_noblank, indexes)){
+            return;
         }
-        initKV(element2);
+        if(indexes.size() == 0){
+            // 特殊情况，只有一个元素
+            initKV(str_noblank);
+        }else{
+            // 第一个和最后一个元素特殊处理
+            int size = indexes.size();
+            Value v;
+            std::string element1 = str_noblank.substr(0, indexes[0]);
+            std::string element2 = str_noblank.substr(indexes[size-1] + 1, str_noblank.size() - indexes[size-1]);
+            initKV(element1);
+            for(int i = 1; i < size; i++){
+                std::string element = str_noblank.substr(indexes[i-1] + 1, indexes[i] - indexes[i-1] - 1);
+                initKV(element);
+            }
+            initKV(element2);
+        }
+    }else{
+        std::cout << "[tiny_json_Error]: 字符串 " << str
+        << " 不能转化为 Object 对象!" << std::endl;
     }
 }
 void tiny_json::Object::initKV(const std::string& str){
@@ -1172,6 +1186,51 @@ static bool parseableString(const std::string& val){
             }
         }else if(str[i] == '"'){
             return false;
+        }
+    }
+    return true;
+}
+static bool checkKV(const std::string& str){
+    std::string key, value;
+    for(int i = 0; i < str.size(); i++){
+        if(str[i] != '"' && str[i] != ':'){
+            key += str[i];
+        }else if(str[i] == ':'){
+            value = str.substr(i + 1, str.size() - i - 1);
+            break;
+        }
+    }
+    return parseable(value, tiny_json::Type::kValue);
+}
+static bool parseableObject(const std::string& str){
+    if(str.size() < 2 || !(str[0] == '{' && str[str.size() - 1] == '}')){
+        return false;
+    }
+    std::string str_noblank = str;
+    removeBlank(str_noblank);
+    std::vector<int> indexes;
+    if(!checkQuoMark(str_noblank, indexes)){
+        return false;
+    }
+    // 检查元素是否合法
+    if(indexes.size() == 0){
+        // 特殊情况，只有一个元素
+        if(!checkKV(str_noblank)){
+            return false;
+        }
+    }else{
+        // 第一个和最后一个元素特殊处理
+        int size = indexes.size();
+        std::string element1 = str_noblank.substr(0, indexes[0]);
+        std::string element2 = str_noblank.substr(indexes[size-1] + 1, str_noblank.size() - indexes[size-1]);
+        if(!checkKV(element1) || !checkKV(element2)){
+            return false;
+        }
+        for(int i = 1; i < size; i++){
+            std::string element = str_noblank.substr(indexes[i-1] + 1, indexes[i] - indexes[i-1] - 1);
+            if(!checkKV(element)){
+                return false;
+            }
         }
     }
     return true;
