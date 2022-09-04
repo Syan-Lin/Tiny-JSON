@@ -1,59 +1,65 @@
-features:
-- C++ 11
-- C++ 谷歌命名规范
-- 智能指针
-- 模板
+# Tiny-JSON
 
-Value 数据格式：
-- "String"              JSON5('String' 或换行 'String\nString')
-- Number                JSON5(十六进制数)
-- Boolean
-- null
-- [Value, Value, Value] JSON5(最后一个元素可以跟逗号)
-- "key": Value          JSON5(键可以不要引号，键值后可以跟逗号)
+### 介绍
+Tiny-JSON 是一个用 C++11 实现的轻量化 JSON 解析和生成器，编码风格参考了 C++ 谷歌命名规范，无第三方库依赖，只依赖于标准库。
 
+### Features
+- 读取 JSON 文件，解析成 C++ 对象
+- 使用 C++ 对象生成 JSON 文件
 
-功能列表:
-- Value:
-  - [ ] 支持六种数据
-  - [ ] 更改数据及数据类型
-  - [ ] 获取数据及数据类型
-  - [ ] 重置数据为默认值
-  - [ ] 转化为字符串
-- Object:
-  - [ ] 添加键值对
-  - [ ] 删除键值对
-  - [ ] 设置键值对
-  - [ ] 获取键值对
-  - [ ] 清空键值对
-  - [ ] 转化为字符串
-- Number:
-  - [x] 支持整数、浮点数、十六进制
-  - [x] 设置数字
-  - [x] 获取数字
-  - [x] 重置数字
-  - [x] 设置输出格式
-  - [x] 读取 Number
-  - [x] 转化为字符串
-- String:
-  - [x] 设置字符串
-  - [x] 获取字符串
-  - [x] 重置字符串
-  - [x] 转义字符
-  - [x] 输出字符串
-- Null:
-  - [x] 转化为字符串
-  - [x] 读取 Null
-- Array:
-  - [ ] 添加元素（指定与尾部）
-  - [ ] 删除元素（指定与尾部）
-  - [ ] 清空元素
-  - [ ] 修改元素
-  - [ ] 获取元素
-  - [ ] 转化为字符串
-- Boolean:
-  - [x] 设置布尔值
-  - [x] 获取布尔值
-  - [x] 重置布尔值
-  - [x] 读取 Boolean
-  - [x] 转化为字符串
+### 示例
+编译器版本：`gcc version 8.1.0 (x86_64-posix-seh-rev0)`
+
+```cpp
+// 1. 读取 JSON 并转化为 C++ 对象
+string json = "{"
+        "\"integer\": 1,"
+        "\"string\": \"Hello World!\","
+        "\"array\": ["
+        "1,"
+        "\"string\","
+        "false"
+        "]"
+        "}";
+Object obj;
+obj.initFromJSON(json);
+
+// 获取数据前，确定对象包含该键值，否则行为未定义
+// 获取值之后需要转化成对应的数据格式
+if(obj.has("integer")){
+    Value& v = obj.get("integer");
+    if(v.getType() == Type::kNumber){
+        int i = static_cast<Number&>(v.get()).get();
+    }
+}
+if(obj.has("string")){
+    Value& v = obj.get("string");
+    if(v.getType() == Type::kString){
+        string str = static_cast<String&>(v.get()).get();
+    }
+}
+if(obj.has("array")){
+    Value& v = obj.get("array");
+    if(v.getType() == Type::kArray){
+        Array arr = static_cast<Array&>(v.get());
+        int first = static_cast<Number&>(arr[0].get()).get();
+        string second = static_cast<String&>(arr[1].get()).get();
+        bool third = static_cast<Boolean&>(arr[2].get()).get();
+    }
+}
+
+// 2. 使用 C++ 对象生成 JSON 文件
+Object obj;
+obj.add("number", 5.2);
+obj.add("string", "Hello World!");
+obj.add("bool", false);
+obj.add("array", Array({1, false, "abc"}));
+
+// 生成 JSON 字符串
+string json = parse(obj);
+```
+
+>更多示例请看 `tiny_json_test.cpp`
+
+### TODO
+- [ ] JSON5 完全支持
