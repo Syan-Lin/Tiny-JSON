@@ -63,3 +63,4 @@ string json = parse(obj);
 
 ### TODO
 - [ ] JSON5 完全支持
+- [ ] UTF-8
