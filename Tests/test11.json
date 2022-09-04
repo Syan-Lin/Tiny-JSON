@@ -1,0 +1,60 @@
+{
+    "data": [
+        {
+            "billAmount": 5,
+            "deliveryListId": "20180001",
+            "deliveryOrder": 1,
+            "geocodingScore": 50,
+            "isCod": true,
+            "latitude": "20180001.22",
+            "latitudeJP": "56789.33",
+            "longitude": "20180001.33",
+            "longitudeJP": "123456.33",
+            "orderDetails": [
+                {
+                    "lapCount": null,
+                    "quantity": 1,
+                    "statusCode": null,
+                    "statusNameMobile": null,
+                    "trackingNo": "201803200001"
+                },
+                {
+                    "lapCount": 4,
+                    "quantity": 1,
+                    "statusCode": "100",
+                    "statusNameMobile": "配送準備中",
+                    "trackingNo": "201803200002"
+                },
+                {
+                    "lapCount": 4,
+                    "quantity": 1,
+                    "statusCode": "300",
+                    "statusNameMobile": "持出し",
+                    "trackingNo": "201803200003"
+                },
+                {
+                    "lapCount": 4,
+                    "quantity": 1,
+                    "statusCode": "100",
+                    "statusNameMobile": "配送準備中",
+                    "trackingNo": "201803200004"
+                },
+                {
+                    "lapCount": 4,
+                    "quantity": 1,
+                    "statusCode": "100",
+                    "statusNameMobile": "配送準備中",
+                    "trackingNo": "201803200005"
+                }
+            ],
+            "orderNo": "102018032001",
+            "receiverAddress1": "東京都足立区足立1-1",
+            "receiverAddress2": "東京都足立区足立1-2",
+            "receiverName": "吉田XXX",
+            "receiverTelNo": "07012340303",
+            "shipperCode": "0030",
+            "shortShipperName": "RB",
+            "vehicleId": "239"
+        }
+    ]
+}

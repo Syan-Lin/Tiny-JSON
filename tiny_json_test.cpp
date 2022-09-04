@@ -28,7 +28,7 @@ void FuncTest(){
         "}"
         "}";
     Object o4 = parse(json);
-    assert(o4.size() == 6 && parse(o4) == "{\"array\": [1, \"string\", false, [\"peter\", \"bob\"], "
+    assert(o4.size() == 6 && parse(o4, false) == "{\"array\": [1, \"string\", false, [\"peter\", \"bob\"], "
     "{\"age\": 16, \"name\": \"[Anna]\"}], \"bool\": true, \"float\": 1.1, \"integer\": 1, "
     "\"object\": {\"age\": 16, \"name\": \"Anna\"}, \"string\": \"Hello \\\"World!'\"}");
 
@@ -41,6 +41,15 @@ void FuncTest(){
     circle.add("obj", Value(circle));
     circle.add("str2", Value("ABC"));
     assert(circle.parse() == "{\"arrar\": [1, 2, {\"str\": \"abc\"}], \"obj\": {\"arrar\": [1, 2, {\"str\": \"abc\"}], \"str\": \"abc\"}, \"str\": \"abc\", \"str2\": \"ABC\"}");
+
+    // 读写文件测试
+    Object o1;
+    for(int i = 0; i < 11; i++){
+        string path = "Tests/test" + to_string(i+1) + ".json";
+        o1 = readFile(path);
+        string file = "Tests/test_out" + to_string(i+1) + ".json";
+        writeFile(file, parse(o1));
+    }
 }
 
 // Object 类测试，覆盖率 100%
