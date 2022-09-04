@@ -348,11 +348,15 @@ private:
     bool bool_ = false;
 };
 
-// 将对象转化为字符串
-extern std::string parse(Object&);
+// 将对象转化为字符串，是否进行格式化，默认为是
+extern std::string parse(Object&, bool = true);
 // 将字符串转化为对象
 extern Object parse(const std::string&);
 // 判断字符串能否转化为对象
 extern bool parseable(const std::string&, Type type = Type::kObject);
+// 读取文件，参数为文件路径
+extern Object readFile(const std::string&);
+// 写入 JSON 文件，参数为文件路径和 JSON 对象
+extern void writeFile(const std::string&, const std::string&);
 
 }

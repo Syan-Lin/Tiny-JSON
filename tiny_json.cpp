@@ -1,7 +1,7 @@
 
 /**************************
 * @author   Yuan.
-* @date     2022/8/24
+* @date     2022/9/1
 * @brief    tiny_json 实现
 * @version  v0.1 alpha
 ***************************/
@@ -13,12 +13,13 @@
 #include <regex>
 #include <stack>
 #include <algorithm>
+#include<fstream>
 
 bool tiny_json::JSON5 = true;
 
 /**************************
 * @author   Yuan.
-* @date     2022/8/30
+* @date     2022/9/4
 * @brief    工具函数
 ***************************/
 
@@ -34,10 +35,12 @@ static bool parseableObject(const std::string&);
 static bool checkQuoMark(const std::string&, std::vector<int>&);
 // 去除空格和包裹字符
 static std::string& removeBlank(std::string&);
+// 格式化 JSON
+static std::string& format(std::string&);
 
 /**************************
 * @author   Yuan.
-* @date     2022/8/31
+* @date     2022/9/4
 * @brief    外部调用
 ***************************/
 
@@ -63,13 +66,38 @@ bool tiny_json::parseable(const std::string& str, tiny_json::Type type){
     }
     return false;
 }
-std::string tiny_json::parse(Object& obj){
-    return obj.parse();
+std::string tiny_json::parse(Object& obj, bool form){
+    std::string result;
+    result = obj.parse();
+    if(form){
+        format(result);
+    }
+    return result;
 }
 tiny_json::Object tiny_json::parse(const std::string& str){
     tiny_json::Object o;
     o.initFromJSON(str);
     return o;
+}
+tiny_json::Object tiny_json::readFile(const std::string& path){
+    std::ifstream file;
+	file.open(path, std::ios::in);
+	if(!file.is_open()){
+		std::cout << "无法打开文件：" + path << std::endl;
+		return Object();
+	}
+	std::string buff, result;
+	while(std::getline(file, buff)){
+		result += buff;
+	}
+	file.close();
+    return parse(result);
+}
+void tiny_json::writeFile(const std::string& path, const std::string& json){
+    std::ofstream ofs;
+	ofs.open(path, std::ios::out);
+    ofs << json;
+    ofs.close();
 }
 
 /**************************
@@ -1234,4 +1262,57 @@ static bool parseableObject(const std::string& str){
         }
     }
     return true;
+}
+static std::string& format(std::string& str){
+    std::string temp;
+    int level = 0;
+
+    // 双引号、单引号数量
+    int num_d = 0, num_s = 0;
+    for(int i = 0; i < str.size(); i++){
+        if(i == 0 && str[i] == '"'){
+            num_d++;
+        }else if(i == 0 && str[i] == '\''){
+            num_s++;
+        }else if(i > 0 && num_d > 0 && str[i] == '"' && str[i-1] != '\\'){
+            num_d--;
+        }else if(i > 0 && num_s > 0 && str[i] == '\'' && str[i-1] != '\\'){
+            num_s--;
+        }
+        if(num_d < 0 || num_s < 0){
+            std::cout << "[tiny_json_Error]: 格式化错误!" << std::endl;
+            break;
+        }
+
+        auto printBlank = [&level, &temp]{
+            temp += '\n';
+            for(int j = 0; j < level; j++){
+                temp += '\t';
+            }
+        };
+        temp += str[i];
+        if(num_d == 0 && num_s == 0){
+            switch(str[i]){
+                case '{':
+                    level++;
+                    printBlank();
+                    break;
+                case ',':
+                    // 跳过空格
+                    i++;
+                    printBlank();
+                    break;
+                case '[':
+                    level++;
+                    printBlank();
+                    break;
+            }
+            if(i < str.size() - 1 && (str[i+1] == '}' || str[i+1] == ']')){
+                level--;
+                printBlank();
+            }
+        }
+    }
+    str = temp;
+    return str;
 }
