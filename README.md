@@ -61,6 +61,9 @@ string json = parse(obj);
 
 >更多示例请看 `tiny_json_test.cpp`
 
+### UML 图
+![uml](uml.jpg)
+
 ### TODO
 - [ ] JSON5 完全支持
 - [ ] UTF-8
