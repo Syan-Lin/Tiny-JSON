@@ -608,6 +608,43 @@ void BooleanTest(){
     assert(!e.get() && e.parse() == "false");
 }
 
+// String JSON5 测试
+// 在 JSON5 下，不支持单双引号混合使用，请一律使用单引号
+void StringJSON5Test(){
+    String s1, s2, s3;
+    s1.initFromJSON("'Hello World!'");          // 单引号测试
+    s2.initFromJSON("'Hello \"World\"!'");      // 单引号测试
+    s3.initFromJSON("'Hello \n\t\tWorld!'");    // 换行测试
+    cout << s1.get() << " " << s1.getJSON() << " " << s1.parse() << endl;
+    cout << s2.get() << " " << s2.getJSON() << " " << s2.parse() << endl;
+    cout << s3.get() << " " << s3.getJSON() << " " << s3.parse() << endl;
+
+    // 错误测试
+    s1.initFromJSON("'Hello 'World!''");    // JSON5 单引号需要转义
+    s1.initFromJSON("\"Hello 'World\"");    // JSON5 的双引号视为单引号
+}
+
+// Object JSON5 测试
+void ObjectJSON5Test(){
+    Object o1;
+    o1.initFromJSON("{number: 1.1, age: 12,}");   // 字符串初始化
+    assert(o1.size() == 2 && o1.parse() == "{age: 12, number: 1.1}");
+
+    // 错误测试
+    o1.initFromJSON("{number: 1.1, age: 12,,}");    // 多一个逗号
+}
+
+// Array JSON5 测试
+void ArrayJSON5Test(){
+    Array a1;
+    a1.initFromJSON("['number', 1.1, false, \n \t ]");   // 字符串初始化
+    cout << a1.parse() << " " << a1.size() << endl;
+    assert(a1.size() == 3 && a1.parse() == "['number', 1.1, false]");
+
+    // 错误测试
+    a1.initFromJSON("['number', 1.1, false,,]");    // 多一个逗号
+}
+
 int main(){
     // Windows cmd 中文编码改为 UTF-8
     // system("chcp 65001");
@@ -616,6 +653,7 @@ int main(){
     // 出现 [tiny_json_xxx] 的错误或警告请无视，只是测试流程
     // ===================================================
 
+    JSON5 = false;
     NumberTest();
     BooleanTest();
     StringTest();
@@ -625,6 +663,12 @@ int main(){
     ObjectTest();
     RegExTest();
     FuncTest();
+
+    // JSON5 测试
+    JSON5 = true;
+    StringJSON5Test();
+    ObjectJSON5Test();
+    ArrayJSON5Test();
 
     return 0;
 }

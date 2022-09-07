@@ -66,4 +66,9 @@ string json = parse(obj);
 
 ### TODO
 - [ ] JSON5 完全支持
+  - [x] String JSON5
+  - [x] Array JSON5
+  - [x] Object JSON5
+  - [ ] 注释
+  - [ ] 混合测试
 - [ ] UTF-8
