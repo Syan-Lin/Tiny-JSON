@@ -1,0 +1,14 @@
+{
+    person: {
+        head: {
+            eyes: 'green',
+            hair: {
+                color: 'lightblood',
+                length: 'short',
+                style: 'a-line'
+            },
+        },
+        heightInInches: 66,
+        name: 'LindsayBassett'
+    }
+}

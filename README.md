@@ -65,10 +65,5 @@ string json = parse(obj);
 ![uml](uml.jpg)
 
 ### TODO
-- [ ] JSON5 完全支持
-  - [x] String JSON5
-  - [x] Array JSON5
-  - [x] Object JSON5
-  - [ ] 注释
-  - [ ] 混合测试
+- [x] JSON5 完全支持
 - [ ] UTF-8

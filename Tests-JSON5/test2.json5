@@ -1,0 +1,31 @@
+{
+    vin: 'LW433B109L1021956',   // 注释
+    receiveTime: 1655777399240,
+    signals: [
+        {
+            sigName: 'BMS_SensorTemp1',
+            sigVal: 0,
+            collectTime: 1655777397224,
+            validStatus: 1,
+        },
+        {
+            sigName: 'BMS_SensorTemp2',
+            sigVal: 0,
+            collectTime: 1655777397224,
+            validStatus: 1,
+        },
+        {
+            sigName: 'BMS_SensorTemp3',
+            sigVal: 0,
+            collectTime: 1655777397224,
+            validStatus: 1
+        },
+        {
+            sigName: 'BMS_SensorTemp4',     // 注释2
+            sigVal: 0,
+            collectTime: 1655777397224,
+            validStatus: 1,
+        }
+    ],
+    location: null
+}

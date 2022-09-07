@@ -1,0 +1,38 @@
+{
+    properties: {
+        age: {  // 年龄参数
+            type: 'integer'
+        },
+        /*
+            用户所属俱乐部
+            跨行注释
+        */
+        club: {
+            properties: {
+                founded: {
+                    type: 'integer'
+                },
+                name: {
+                    type: 'string'
+                }
+            },
+            required: [
+                'name'
+            ],
+            type: 'object'
+        },
+        first_name: {
+            type: 'string'
+        },
+        last_name: {
+            type: 'string'
+        },
+    },
+    required: [
+        'first_name',
+        'last_name',
+        'age',
+        'club'
+    ],
+    type: 'object',
+}

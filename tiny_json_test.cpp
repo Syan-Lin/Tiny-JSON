@@ -645,6 +645,42 @@ void ArrayJSON5Test(){
     a1.initFromJSON("['number', 1.1, false,,]");    // 多一个逗号
 }
 
+void AnnotationTest(){
+    string str(
+            "// This is an Annotation\n"
+            "{\n"
+            "/*\n"
+            "\tThis is a cross Annotation\n"
+            "\tThis is a cross Annotation\n"
+            "*/\n"
+            "\"bool\": false,\n"
+            "\"info\": \"GWB //this shall not be removed\",  // This is an Annotation\n"
+            "\"data\": 123 // This is an Annotation\n"
+            "}"
+    );
+    // 只有在 parse 函数中才能去除注释
+    Object obj = parse(str);
+    // 或者手动调用
+    removeAnnotation(str);
+    Object obj2;
+    obj2.initFromJSON(str);
+
+    cout << obj.parse() << endl;
+    cout << obj2.parse() << endl;
+}
+
+// JSON5 混合测试
+void JSON5Test(){
+    // 读写文件测试
+    Object o1;
+    for(int i = 0; i < 11; i++){
+        string path = "Tests-JSON5/test" + to_string(i+1) + ".json5";
+        o1 = readFile(path);
+        string file = "Tests-JSON5/test_out" + to_string(i+1) + ".json5";
+        writeFile(file, parse(o1));
+    }
+}
+
 int main(){
     // Windows cmd 中文编码改为 UTF-8
     // system("chcp 65001");
@@ -669,6 +705,8 @@ int main(){
     StringJSON5Test();
     ObjectJSON5Test();
     ArrayJSON5Test();
+    AnnotationTest();
+    JSON5Test();
 
     return 0;
 }

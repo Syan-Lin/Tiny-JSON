@@ -76,7 +76,14 @@ std::string tiny_json::parse(Object& obj, bool form){
 }
 tiny_json::Object tiny_json::parse(const std::string& str){
     tiny_json::Object o;
-    o.initFromJSON(str);
+    if(JSON5){
+        std::string temp = str;
+        removeAnnotation(temp);
+        o.initFromJSON(temp);
+    }else{
+        o.initFromJSON(str);
+    }
+
     return o;
 }
 tiny_json::Object tiny_json::readFile(const std::string& path){
@@ -88,7 +95,7 @@ tiny_json::Object tiny_json::readFile(const std::string& path){
 	}
 	std::string buff, result;
 	while(std::getline(file, buff)){
-		result += buff;
+		result += buff + '\n';
 	}
 	file.close();
     return parse(result);
@@ -98,6 +105,50 @@ void tiny_json::writeFile(const std::string& path, const std::string& json){
 	ofs.open(path, std::ios::out);
     ofs << json;
     ofs.close();
+}
+void tiny_json::removeAnnotation(std::string& str){
+    bool isAnno = false;
+    bool isCrossAnno = false;
+    int num_d = 0, num_s = 0;
+    for(int i = 0; i < str.size(); i++){
+        if(isAnno){
+            if(str[i] == '\n'){
+                isAnno = false;
+            }
+            str.erase(i, 1);
+            i--;
+            continue;
+        }else if(isCrossAnno){
+            if(i < str.size() && str[i+1] == '/' && str[i] == '*'){
+                isCrossAnno = false;
+                str.erase(i, 2);
+                continue;
+            }
+            str.erase(i, 1);
+            i--;
+            continue;
+        }
+        if(num_d == 0 && str[i] == '"'){
+            num_d++;
+        }else if(num_s == 0 && str[i] == '\''){
+            num_s++;
+        }else if(i > 0 && num_d > 0 && str[i] == '"' && str[i-1] != '\\'){
+            // 处于双引号中
+            num_d--;
+        }else if(i > 0 && num_s > 0 && str[i] == '\'' && str[i-1] != '\\'){
+            // 处于单引号中
+            num_s--;
+        }
+        if(num_d == 0 && num_s == 0 && i > 0){
+            if(str[i] == '/' && str[i-1] == '/'){
+                i = i - 2;
+                isAnno = true;
+            }else if(str[i] == '*' && str[i-1] == '/'){
+                i = i - 2;
+                isCrossAnno = true;
+            }
+        }
+    }
 }
 
 /**************************
@@ -171,13 +222,29 @@ std::string tiny_json::Object::parse(){
     return result;
 }
 void tiny_json::Object::initFromJSON(const std::string& str){
-    if(str.size() < 2 || !(str[0] == '{' && str[str.size() - 1] == '}')){
+    std::string temp = str;
+    for(int i = 0; i < temp.size(); i++){
+        if(temp[i] != '{'){
+            temp.erase(i, 1);
+            i--;
+        }else{
+            break;
+        }
+    }
+    for(int i = temp.size() - 1; i >= 0; i--){
+        if(temp[i] != '}'){
+            temp.erase(i, 1);
+        }else{
+            break;
+        }
+    }
+    if(temp.size() < 2){
         std::cout << "[tiny_json_Error]: 字符串 " << str
         << " 不能转化为 Object 对象!" << std::endl;
         return;
     }
-    if(parseable(str, Type::kObject)){
-        std::string str_noblank = str;
+    if(parseable(temp, Type::kObject)){
+        std::string str_noblank = std::move(temp);
         removeBlank(str_noblank);
         std::vector<int> indexes;
         if(!checkQuoMark(str_noblank, indexes)){

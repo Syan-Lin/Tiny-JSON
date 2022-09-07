@@ -359,5 +359,7 @@ extern bool parseable(const std::string&, Type type = Type::kObject);
 extern Object readFile(const std::string&);
 // 写入 JSON 文件，参数为文件路径和 JSON 对象
 extern void writeFile(const std::string&, const std::string&);
+// 去除注释
+extern void removeAnnotation(std::string&);
 
 }
