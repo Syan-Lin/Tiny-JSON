@@ -12,6 +12,7 @@ Tiny-JSON 是一个用 C++11 实现的轻量化 JSON 解析和生成器（支持
 
 ```cpp
 // 1. 读取 JSON 并转化为 C++ 对象
+using namespace tiny_json;
 string json = "{"
         "\"integer\": 1,"
         "\"string\": \"Hello World!\","
@@ -21,8 +22,7 @@ string json = "{"
         "false"
         "]"
         "}";
-Object obj;
-obj.initFromJSON(json);
+Object obj = parse(json);
 
 // 获取数据前，确定对象包含该键值，否则行为未定义
 // 获取值之后需要转化成对应的数据格式
