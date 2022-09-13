@@ -61,6 +61,7 @@ public:
 // JSON 键值对中的值：
 // 可以是 Number、Boolean、String、Null、Object、Array
 class Value : public Parseable{
+    typedef std::pair<std::string, Value> kv;
 public:
     // 拷贝控制成员
     Value();
@@ -68,6 +69,7 @@ public:
     Value(Object&&) noexcept;
     Value(const Array&);
     Value(Array&&) noexcept;
+    Value(std::initializer_list<kv>);
     Value(const double);                 // Number 初始化
     Value(const int);                    // Number 初始化
     Value(const bool);                   // Boolean 初始化
@@ -82,21 +84,19 @@ public:
     Value& operator=(const int);
     Value& operator=(const bool);
     Value& operator=(const std::string&);
+    Value& operator=(const Object&);
+    Value& operator=(const Array&);
     Value& operator=(const char[]);
+    Value& operator[](const std::string&);
+    Value& operator[](const size_t);
     ~Value() = default;
 
-    // 值设置
-    void set(const double);
-    void set(const int);
-    void set(const bool);
-    void set(const std::string&);
-    void set(const char[]);
-    void set(const Object&);
-    void set(const Array&);
     // 获取值类型
     Type getType() const;
     // 获取值
-    Parseable& get();
+    template<typename T> T& get();
+    // 获取数值类型，数值格式相关
+    Number& getNumber();
     // 重置值为 Null
     void reset();
 
@@ -114,23 +114,26 @@ private:
 class Object : public Parseable{
     typedef std::string Key;
     typedef std::map<std::string, Value> kvMap;
+    typedef std::pair<std::string, Value> kv;
 public:
     // 拷贝控制成员
     Object() = default;
+    Object(std::initializer_list<kv>);
     Object(const Object&);                // 拷贝构造
     Object(Object&&) noexcept;            // 移动构造
     Object& operator=(const Object&);     // 拷贝赋值
     Object& operator=(Object&&) noexcept; // 移动赋值
+    Value& operator[](const Key&);
     ~Object() = default;
 
     // 添加键值对，如果存在同名的键值对，则覆盖
     void add(const Key&, const Value&);
     // 删除键值对，如果不存在则无行为
-    void del(const Key&);
+    void remove(const Key&);
     // 设置键值对，如果不存在则创建一个
     void set(const Key&, const Value&);
-    // 根据键获得值
-    Value& get(const Key&);
+    // 根据值类型
+    Type getType(const Key&);
     // 是否有该键值
     bool has(const Key&);
     // Map 大小
@@ -211,8 +214,6 @@ public:
     void pop();
     // 获取数组大小
     size_t size() const;
-    // 获取元素
-    Value& get(const size_t);
     // 清空数组
     void reset();
 
@@ -226,26 +227,24 @@ private:
     // 检查数组越界
     bool checkIndex(const size_t index);
     bool checkIndexAdd(const size_t index);
+    // 获取元素
+    Value& get(const size_t);
 };
 
 // 数字类型，整数或浮点数，支持十六进制（负十六进制数会自动转化为整数）
 class Number : public Parseable{
 public:
     // 拷贝控制成员
-    Number() = default;
-    Number(const double, const NumberType = NumberType::kDefault);
-    Number(const int, const NumberType = NumberType::kInteger);
-    Number(const Number&);                    // 拷贝构造
-    Number& operator=(const Number&);         // 拷贝赋值
+    Number();
+    Number(const double);
+    Number(const int);
     Number& operator=(const double);
+    Number& operator=(const int);
     ~Number() = default;
 
-    // 设置数字
-    void set(const double);
     // 获取数字
-    double get() const;
-    // 重置数字
-    void reset();
+    double& getDouble();
+    int& getInt();
     // 是否是十六进制
     bool isHex() const;
     // 返回 parse 类型
@@ -259,10 +258,13 @@ public:
     void initFromJSON(const std::string&) override;
 
 private:
-    double num_ = 0;
+    void set(const double);
+    union{
+        int num_int_;
+        double num_double_;
+    };
     NumberType type_ = NumberType::kDefault;
     size_t decimal_place_ = 6;
-    void isLoseAccuracy(const double);
 };
 
 // 空类型
@@ -287,27 +289,16 @@ public:
     String();
     String(const std::string&);
     String(const char[]);
-    String(const String&);                      // 拷贝构造
-    String(String&&) noexcept;                  // 移动构造
     String(std::string&&) noexcept;             // 移动构造
-    String& operator=(const String&);           // 拷贝赋值
-    String& operator=(String&&) noexcept;       // 移动赋值
     String& operator=(const std::string&);      // 拷贝赋值
     String& operator=(const char[]);            // 拷贝赋值
     String& operator=(std::string&&) noexcept;  // 移动赋值
     ~String() = default;
 
-    // 设置字符串
-    void set(const std::string&);
-    // 设置字符串
-    void set(const char[]);
-
     // 获取字符串
-    std::string get() const;
+    std::string& get();
     // 获取 JSON 字符串
     std::string getJSON();
-    // 重置字符串
-    void reset();
 
     // 输出字符串
     std::string parse() override;
@@ -328,18 +319,10 @@ public:
     // 拷贝控制成员
     Boolean() = default;
     Boolean(const bool);
-    Boolean(const Boolean&);                    // 拷贝构造
-    Boolean& operator=(const Boolean&);         // 拷贝赋值
     Boolean& operator=(const bool);
     ~Boolean() = default;
 
-    // 设置布尔值
-    void set(const bool);
-    // 获取布尔值
-    bool get() const;
-    // 重置布尔值
-    void reset();
-
+    bool& get();
     // 将布尔值输出为字符串
     std::string parse() override;
     // 用字符串初始化对象

@@ -74,10 +74,10 @@ void ObjectTest(){
     o3.add("string", "abc");
     o3.set("number", 5.2);
     if(o3.has("number")){
-        Value& v = o3.get("number");
-        assert(v.parse() == "5.2");
+        double v = o3["number"].get<double>();
+        assert(v == 5.2);
     }
-    o3.del("number");
+    o3.remove("number");
     assert(o3.parse() == "{\"bool\": false, \"string\": \"abc\"}");
     o3.reset();
     assert(o3.parse() == "{}");
@@ -106,9 +106,9 @@ void ObjectTest(){
     "\"object\": {\"age\": 16, \"name\": \"Anna\"}, \"string\": \"Hello \\\"World!'\"}");
 
     // 错误测试
-    o4.del("hhh");
-    o4.add("integer", 6.6); // key 已存在，覆盖
-    o4.get("abcdfg");       // 严重错误，行为未定义
+    o4.remove("hhh");
+    o4.add("integer", 6.6);         // key 已存在，覆盖
+    o4["abcdfg"].get<string>();       // 严重错误，行为未定义
 }
 
 // Array 类测试，覆盖率 100%
@@ -137,7 +137,7 @@ void ArrayTest(){
 
     // 功能测试
     a7[0] = 6.28;           // 等价于 a7[0].set(6.28)
-    a7[1].set(true);        // 等价于 a7[1] = true
+    a7[1] = true;
     a7.append(Value(5));    // append(Value&)
     a7.append("hello");     // append(char[]) -> append(string&)
     a7.append(false);       // append(bool)
@@ -265,24 +265,24 @@ void ValueTest(){
     assert(s6.getType() == Type::kNumber && s6.parse() == "0x5");
 
     // 功能测试
-    static_cast<Number&>(v2.get()).set(6.15);
-    static_cast<Boolean&>(v3.get()).set(false);
-    static_cast<String&>(v4.get()).set("ABC");
+    v2 = 6.15;
+    v3 = false;
+    v4 = "ABC";
     assert(v2.getType() == Type::kNumber && v2.parse() == "6.15");
     assert(v3.getType() == Type::kBoolean && v3.parse() == "false");
     assert(v4.getType() == Type::kString && v4.parse() == "\"ABC\"");
     v2.reset();
     assert(v2.getType() == Type::kNull && v2.parse() == "null");
-    v1.set(true);
-    v2.set("abc");      // set(char[]) -> set(string&)
-    v3.set(2);
-    v4.set(3.5);
+    v1 = true;
+    v2 = "abc";      // set(char[]) -> set(string&)
+    v3 = 2;
+    v4 = 3.5;
     assert(v4.getType() == Type::kNumber && v4.parse() == "3.5");
     assert(v3.getType() == Type::kNumber && v3.parse() == "2");
     assert(v1.getType() == Type::kBoolean && v1.parse() == "true");
     assert(v2.getType() == Type::kString && v2.parse() == "\"abc\"");
-    v7.set(Object());
-    v8.set(Array({1, 2 ,3}));
+    v7 = Object();
+    v8 = Array({1, 2 ,3});
     assert(v7.getType() == Type::kObject && v7.parse() == "{}");
     assert(v8.getType() == Type::kArray && v8.parse() == "[1, 2, 3]");
 
@@ -367,45 +367,41 @@ void NumberTest(){
     Number n1;                      // 默认为十进制 0
     Number n2(d);                   // Number(double)
     Number n2_(i);                  // Number(double) 自动转整数
-    Number n3(n2);                  // Number(Number&)
     Number n4, n5;
     Number n6(3);                   // Number(int)
     n4.initFromJSON("0xabc123");    // 字符串初始化
     n5.initFromJSON("abc123");      // 字符串初始化
-    assert(n1.get() == 0 && n1.parse() == "0" && n1.getType() == NumberType::kDefault);
-    assert(n2.get() == 3.14 && n2.parse() == "3.14" && n2.getType() == NumberType::kDefault);
-    assert(n2_.get() == 3 && n2_.parse() == "3" && n2_.getType() == NumberType::kInteger);
-    assert(n3.get() == 3.14 && n3.parse() == "3.14" && n3.getType() == NumberType::kDefault);
-    assert(n4.get() == 11256099 && n4.parse() == "0xabc123" && n4.getType() == NumberType::kHex);
-    assert(n5.get() == 11256099 && n5.parse() == "0xabc123" && n5.getType() == NumberType::kHex);
-    assert(n6.get() == 3 && n6.parse() == "3" && n6.getType() == NumberType::kInteger);
+    assert(n1.getDouble() == 0 && n1.parse() == "0" && n1.getType() == NumberType::kDefault);
+    assert(n2.getDouble() == 3.14 && n2.parse() == "3.14" && n2.getType() == NumberType::kDefault);
+    assert(n2_.getInt() == 3 && n2_.parse() == "3" && n2_.getType() == NumberType::kInteger);
+    assert(n4.getInt() == 11256099 && n4.parse() == "0xabc123" && n4.getType() == NumberType::kHex);
+    assert(n5.getInt() == 11256099 && n5.parse() == "0xabc123" && n5.getType() == NumberType::kHex);
+    assert(n6.getInt() == 3 && n6.parse() == "3" && n6.getType() == NumberType::kInteger);
 
     // 两种赋值
     Number n7, n8;
-    n7 = 3.14;                      // operator=(double)
-    n8 = n4;                        // operator=(Number&)
-    assert(n7.get() == 3.14 && n7.parse() == "3.14" && n7.getType() == NumberType::kDefault);
-    assert(n8.get() == 11256099 && n8.parse() == "0xabc123" && n8.getType() == NumberType::kHex);
+    n7 = 3.14;                     // operator=(double)
+    n8 = 3;                        // operator=(Number&)
+    assert(n7.getDouble() == 3.14 && n7.parse() == "3.14" && n7.getType() == NumberType::kDefault);
+    assert(n8.getInt() == 3 && n8.parse() == "3" && n8.getType() == NumberType::kInteger);
 
     // 功能测试
-    n1.set(3.14159245622134131);
-    assert(n1.get() == 3.14159245622134131 && n1.parse() == "3.14159" && n1.getType() == NumberType::kDefault);
+    n1 = 3.14159245622134131;
+    assert(n1.getDouble() == 3.14159245622134131 && n1.parse() == "3.14159" && n1.getType() == NumberType::kDefault);
     n1.parseSetting(NumberType::kFloat, 18);
-    assert(n1.get() == 3.14159245622134131 && n1.parse() == "3.14159245622134131" && n1.getType() == NumberType::kFloat);
-    n2.set(1234567890);
-    assert(n2.get() == 1234567890 && n2.parse() == "1234567890" && n2.getType() == NumberType::kInteger);
+    assert(n1.getDouble() == 3.14159245622134131 && n1.parse() == "3.14159245622134131" && n1.getType() == NumberType::kFloat);
+    n2 = 1234567890;
+    assert(n2.getInt() == 1234567890 && n2.parse() == "1234567890" && n2.getType() == NumberType::kInteger);
     n4.parseSetting(NumberType::kInteger);
-    assert(n4.get() == 11256099 && n4.parse() == "11256099" && n4.getType() == NumberType::kInteger);
-    n4.reset();
-    assert(n4.get() == 0 && n4.parse() == "0" && n4.getType() == NumberType::kDefault);
-    n1.set(5);      // kFloat -> kInteger
-    n2.set(5);      // kDefault -> kInteger
-    n5.set(3.14);   // kHex -> kDefault
-    n4.set(3.14);   // kInteger -> kDefault
-    assert(n1.get() == 5 && n1.parse() == "5" && n1.getType() == NumberType::kInteger);
-    assert(n2.get() == 5 && n1.parse() == "5" && n2.getType() == NumberType::kInteger);
-    assert(n5.get() == 3.14 && n5.parse() == "3.14" && n5.getType() == NumberType::kDefault);
-    assert(n4.get() == 3.14 && n4.parse() == "3.14" && n4.getType() == NumberType::kDefault);
+    assert(n4.getInt() == 11256099 && n4.parse() == "11256099" && n4.getType() == NumberType::kInteger);
+    n1 = 5;      // kFloat -> kInteger
+    n2 = 5;      // kDefault -> kInteger
+    n5 = 3.14;   // kHex -> kDefault
+    n4 = 3.14;   // kInteger -> kDefault
+    assert(n1.getInt() == 5 && n1.parse() == "5" && n1.getType() == NumberType::kInteger);
+    assert(n2.getInt() == 5 && n1.parse() == "5" && n2.getType() == NumberType::kInteger);
+    assert(n5.getDouble() == 3.14 && n5.parse() == "3.14" && n5.getType() == NumberType::kDefault);
+    assert(n4.getDouble() == 3.14 && n4.parse() == "3.14" && n4.getType() == NumberType::kDefault);
 
     // 数字格式
     {
@@ -416,12 +412,12 @@ void NumberTest(){
         s4.initFromJSON("1.");
         s5.initFromJSON("0xa");
         s6.initFromJSON("1.1e2");
-        assert(s1.get() == 1 && s1.parse() == "1" && s1.getType() == NumberType::kInteger);
-        assert(s2.get() == 1.1 && s2.parse() == "1.1" && s2.getType() == NumberType::kDefault);
-        assert(s3.get() == 0.1 && s3.parse() == "0.1" && s3.getType() == NumberType::kDefault);
-        assert(s4.get() == 1 && s4.parse() == "1" && s4.getType() == NumberType::kInteger);
-        assert(s5.get() == 10 && s5.parse() == "0xa" && s5.getType() == NumberType::kHex);
-        assert(s6.get() == 110 && s6.parse() == "110" && s6.getType() == NumberType::kInteger);
+        assert(s1.getInt() == 1 && s1.parse() == "1" && s1.getType() == NumberType::kInteger);
+        assert(s2.getDouble() == 1.1 && s2.parse() == "1.1" && s2.getType() == NumberType::kDefault);
+        assert(s3.getDouble() == 0.1 && s3.parse() == "0.1" && s3.getType() == NumberType::kDefault);
+        assert(s4.getInt() == 1 && s4.parse() == "1" && s4.getType() == NumberType::kInteger);
+        assert(s5.getInt() == 10 && s5.parse() == "0xa" && s5.getType() == NumberType::kHex);
+        assert(s6.getInt() == 110 && s6.parse() == "110" && s6.getType() == NumberType::kInteger);
     }
     {
         Number s1, s2, s3, s4, s5, s6;
@@ -431,25 +427,25 @@ void NumberTest(){
         s4.initFromJSON("-1.");
         s5.initFromJSON("-0xa");
         s6.initFromJSON("-1.1e2");
-        assert(s1.get() == -1 && s1.parse() == "-1" && s1.getType() == NumberType::kInteger);
-        assert(s2.get() == -1.1 && s2.parse() == "-1.1" && s2.getType() == NumberType::kDefault);
-        assert(s3.get() == -0.1 && s3.parse() == "-0.1" && s3.getType() == NumberType::kDefault);
-        assert(s4.get() == -1 && s4.parse() == "-1" && s4.getType() == NumberType::kInteger);
-        assert(s5.get() == -10 && s5.parse() == "-10" && s5.getType() == NumberType::kInteger);
-        assert(s6.get() == -110 && s6.parse() == "-110" && s6.getType() == NumberType::kInteger);
+        assert(s1.getInt() == -1 && s1.parse() == "-1" && s1.getType() == NumberType::kInteger);
+        assert(s2.getDouble() == -1.1 && s2.parse() == "-1.1" && s2.getType() == NumberType::kDefault);
+        assert(s3.getDouble() == -0.1 && s3.parse() == "-0.1" && s3.getType() == NumberType::kDefault);
+        assert(s4.getInt() == -1 && s4.parse() == "-1" && s4.getType() == NumberType::kInteger);
+        assert(s5.getInt() == -10 && s5.parse() == "-10" && s5.getType() == NumberType::kInteger);
+        assert(s6.getInt() == -110 && s6.parse() == "-110" && s6.getType() == NumberType::kInteger);
     }
 
     // 错误测试
     Number n9;
     n9.initFromJSON("a.56");                    // 十六进制不支持小数，丢失精度
-    assert(n9.get() == 10 && n9.parse() == "0xa" && n9.getType() == NumberType::kHex);
+    assert(n9.getInt() == 10 && n9.parse() == "0xa" && n9.getType() == NumberType::kHex);
     Number n10;
     n10.initFromJSON("qabc5q.56");               // 非法的字符串
-    n3.parseSetting(NumberType::kInteger);      // 浮点数以整数输出会丢失精度
-    assert(n3.get() == 3.14 && n3.parse() == "3");
-    n3.parseSetting(NumberType::kHex);          // 浮点数以十六进制输出会丢失精度
-    assert(n3.get() == 3.14 && n3.parse() == "0x3");
-    n3.initFromJSON("");
+    n4.parseSetting(NumberType::kInteger);      // 浮点数以整数输出会丢失精度
+    assert(n4.getInt() == 3 && n4.parse() == "3");
+    n5.parseSetting(NumberType::kHex);          // 浮点数以十六进制输出会丢失精度
+    assert(n5.getInt() == 3 && n5.parse() == "0x3");
+    n5.initFromJSON("");
 }
 
 // Null 类测试，覆盖率 100%
@@ -471,23 +467,15 @@ void StringTest(){
     // 七种初始化
     string str = "test\nnext\tline\n";
     String s1(str);                             // String(string&)
-    String s2(s1);                              // String(String&)
     String s3("a String");                      // String(char[]) -> String(string&&)
     String s4(string("a string"));              // String(string&&)
     String s5;                                  // String()
-    String s6(move(String("move String")));     // String(String&&)
-                                                // 这里实际上会经过 String(char[]) -> String(string&&) -> String(String&&)
-                                                // 不过前两步是构造 String("move String") 这个右值对象
     String s7;                                  // 字符串初始化
     s7.initFromJSON("\"initFromJSON\"");
     assert(s1.get() == "test\nnext\tline\n");
     assert(s1.getJSON() == "\"test\\nnext\\tline\\n\"");
     assert(s1.parse() == "\"test\\nnext\\tline\\n\"");
     assert(s1.getJSON() == "\"test\\nnext\\tline\\n\"");
-    assert(s2.get() == "test\nnext\tline\n");
-    assert(s2.getJSON() == "\"test\\nnext\\tline\\n\"");
-    assert(s2.parse() == "\"test\\nnext\\tline\\n\"");
-    assert(s2.getJSON() == "\"test\\nnext\\tline\\n\"");
     assert(s3.get() == "a String");
     assert(s3.getJSON() == "\"a String\"");
     assert(s3.parse() == "\"a String\"");
@@ -500,35 +488,16 @@ void StringTest(){
     assert(s5.getJSON() == "\"\"");
     assert(s5.parse() == "\"\"");
     assert(s5.getJSON() == "\"\"");
-    assert(s6.get() == "move String");
-    assert(s6.getJSON() == "\"move String\"");
-    assert(s6.parse() == "\"move String\"");
-    assert(s6.getJSON() == "\"move String\"");
     assert(s7.get() == "initFromJSON");
     assert(s7.getJSON() == "\"initFromJSON\"");
     assert(s7.parse() == "\"initFromJSON\"");
     assert(s7.getJSON() == "\"initFromJSON\"");
 
     // 五种赋值
-    String s8, s9, s10, s11;
-    s7 = s1;                                      // operator=(String&)
-    s8 = str;                                     // operator=(string&)
-    s9 = std::move(String("test\nnext\tline\n")); // operator=(String&&)
+    String s10, s11;
     s10 = string("test\nnext\tline\n");           // operator=(string&&)
     s11 = "test\nnext\tline\n";                   // operator=(char[])
-    assert(s7.get() == "test\nnext\tline\n");
-    assert(s7.getJSON() == "\"test\\nnext\\tline\\n\"");
-    assert(s7.parse() == "\"test\\nnext\\tline\\n\"");
-    assert(s7.getJSON() == "\"test\\nnext\\tline\\n\"");
-    assert(s8.get() == "test\nnext\tline\n");
-    assert(s8.getJSON() == "\"test\\nnext\\tline\\n\"");
-    assert(s8.parse() == "\"test\\nnext\\tline\\n\"");
-    assert(s8.getJSON() == "\"test\\nnext\\tline\\n\"");
-    assert(s9.get() == "test\nnext\tline\n");
-    assert(s9.getJSON() == "\"test\\nnext\\tline\\n\"");
-    assert(s9.parse() == "\"test\\nnext\\tline\\n\"");
-    assert(s9.getJSON() == "\"test\\nnext\\tline\\n\"");
-    assert(s10.get() == "test\nnext\tline\n");
+   assert(s10.get() == "test\nnext\tline\n");
     assert(s10.getJSON() == "\"test\\nnext\\tline\\n\"");
     assert(s10.parse() == "\"test\\nnext\\tline\\n\"");
     assert(s10.getJSON() == "\"test\\nnext\\tline\\n\"");
@@ -536,23 +505,6 @@ void StringTest(){
     assert(s11.getJSON() == "\"test\\nnext\\tline\\n\"");
     assert(s11.parse() == "\"test\\nnext\\tline\\n\"");
     assert(s11.getJSON() == "\"test\\nnext\\tline\\n\"");
-
-    // 功能测试
-    s1.set("this is a message");
-    assert(s1.get() == "this is a message");
-    assert(s1.getJSON() == "\"this is a message\"");
-    assert(s1.parse() == "\"this is a message\"");
-    assert(s1.getJSON() == "\"this is a message\"");
-    s1.set(string("abc"));
-    assert(s1.get() == "abc");
-    assert(s1.getJSON() == "\"abc\"");
-    assert(s1.parse() == "\"abc\"");
-    assert(s1.getJSON() == "\"abc\"");
-    s1.reset();
-    assert(s1.get() == "");
-    assert(s1.getJSON() == "\"\"");
-    assert(s1.parse() == "\"\"");
-    assert(s1.getJSON() == "\"\"");
 
     // 转义字符测试
     String c;
@@ -594,12 +546,6 @@ void BooleanTest(){
     b6 = true;
     assert(!b5.get() && b5.parse() == "false");
     assert(b6.get() && b6.parse() == "true");
-
-    // 功能测试
-    b1.set(true);
-    b2.reset();
-    assert(b1.get() && b1.parse() == "true");
-    assert(!b2.get() && b2.parse() == "false");
 
     // 错误测试
     Boolean e;
@@ -700,7 +646,7 @@ int main(){
     RegExTest();
     FuncTest();
 
-    // JSON5 测试
+    // // JSON5 测试
     JSON5 = true;
     StringJSON5Test();
     ObjectJSON5Test();

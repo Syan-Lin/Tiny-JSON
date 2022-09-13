@@ -11,55 +11,38 @@ Tiny-JSON 是一个用 C++11 实现的轻量化 JSON 解析和生成器（支持
 编译器版本：`gcc version 8.1.0 (x86_64-posix-seh-rev0)`
 
 ```cpp
-// 1. 读取 JSON 并转化为 C++ 对象
 using namespace tiny_json;
-string json = "{"
-        "\"integer\": 1,"
-        "\"string\": \"Hello World!\","
-        "\"array\": ["
-        "1,"
-        "\"string\","
-        "false"
-        "]"
-        "}";
+
+// 1. 读取 JSON 并转化为 C++ 对象
+string json = R"({
+        "integer": 1,
+        "string": "Hello World!",
+        "array": [
+            1.2,
+            "string",
+            false
+        ]
+        })";
 Object obj = parse(json);
 
-// 获取数据前，确定对象包含该键值，否则行为未定义
-// 获取值之后需要转化成对应的数据格式
-if(obj.has("integer")){
-    Value& v = obj.get("integer");
-    if(v.getType() == Type::kNumber){
-        int i = static_cast<Number&>(v.get()).get();
-    }
-}
-if(obj.has("string")){
-    Value& v = obj.get("string");
-    if(v.getType() == Type::kString){
-        string str = static_cast<String&>(v.get()).get();
-    }
-}
-if(obj.has("array")){
-    Value& v = obj.get("array");
-    if(v.getType() == Type::kArray){
-        Array arr = static_cast<Array&>(v.get());
-        int first = static_cast<Number&>(arr[0].get()).get();
-        string second = static_cast<String&>(arr[1].get()).get();
-        bool third = static_cast<Boolean&>(arr[2].get()).get();
-    }
-}
+int integer = obj["integer"].get<int>();
+string str = obj["string"].get<string>();
+double first = obj["array"][0].get<double>();
+string second = obj["array"][1].get<string>();
+bool third = obj["array"][2].get<bool>();
 
 // 2. 使用 C++ 对象生成 JSON 文件
-Object obj;
-obj.add("number", 5.2);
-obj.add("string", "Hello World!");
-obj.add("bool", false);
-obj.add("array", Array({1, false, "abc"}));
-
+Object obj2 = {
+    {"number", 5.2},
+    {"string", "Hello World!"},
+    {"bool", false},
+    {"array", Array({1, false, "abc"})}
+};
 // 生成 JSON 字符串
-string json = parse(obj);
+string json2 = parse(obj2);
 ```
 
->更多示例请看 `tiny_json_test.cpp`
+>更多示例请看 `tiny_json_example.cpp` 和 `tiny_json_test.cpp`
 
 ### UML 图
 ![uml](uml.jpg)
