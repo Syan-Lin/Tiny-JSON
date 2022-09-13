@@ -41,12 +41,13 @@ void example(){
         {"happy", true},
         {"height", 1.83},
         {"hair", {
-            {"color", "blue"},
-            {"hairStyle", "short"}
+            {"color", "蓝色"},
+            {"hairStyle", "短头发"}
         }},
         {"list", Array({1, 2, 3})}
     };
     cout << parse(obj2) << endl;
+    writeFile("test.json", parse(obj2));
 }
 
 // JSON5 示例

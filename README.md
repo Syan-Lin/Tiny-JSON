@@ -6,6 +6,8 @@ Tiny-JSON 是一个用 C++11 实现的轻量化 JSON 解析和生成器（支持
 ### Features
 - 读取 JSON 文件，解析成 C++ 对象
 - 使用 C++ 对象生成 JSON 文件
+- 支持 JSON5
+- 极简的用法
 
 ### 示例
 编译器版本：`gcc version 8.1.0 (x86_64-posix-seh-rev0)`
@@ -49,4 +51,3 @@ string json2 = parse(obj2);
 
 ### TODO
 - [x] JSON5 完全支持
-- [ ] UTF-8

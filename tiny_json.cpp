@@ -102,6 +102,10 @@ tiny_json::Object tiny_json::readFile(const std::string& path){
 void tiny_json::writeFile(const std::string& path, const std::string& json){
     std::ofstream ofs;
 	ofs.open(path, std::ios::out);
+    if(!ofs.is_open()){
+        std::cout << "文件打开失败，路径：" + path << std::endl;
+        return;
+    }
     ofs << json;
     ofs.close();
 }
