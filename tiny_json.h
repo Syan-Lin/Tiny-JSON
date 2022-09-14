@@ -9,7 +9,7 @@
 namespace tiny_json{
 
 // 输出是否使用 JSON5 标准
-// 注意事项：JSON5 下字符串请一律使用单引号包裹，且单引号需要转义
+// 注意事项：JSON5 下字符串请一律使用单引号包裹，且字符串中单引号需要转义
 extern bool JSON5;
 
 // JSON 数据类型

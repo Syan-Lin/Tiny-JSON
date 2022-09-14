@@ -1158,7 +1158,6 @@ void tiny_json::Boolean::initFromJSON(const std::string& str){
 * @author   Yuan.
 * @date     2022/8/30
 * @brief    工具函数实现
-* @test     JSON5 单引号待测试
 ***************************/
 
 static bool checkQuoMark(const std::string& str, std::vector<int>& indexes){
