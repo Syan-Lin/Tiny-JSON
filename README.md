@@ -1,5 +1,5 @@
 # Tiny-JSON
-![](https://img.shields.io/badge/c%2B%2B-11-blue?style=for-the-badge) ![](https://img.shields.io/badge/release-v1.0-blue?style=for-the-badge) ![](https://img.shields.io/badge/coverage-100%25-green?style=for-the-badge) ![](https://img.shields.io/badge/license-mit-blue?style=for-the-badge)
+![](https://img.shields.io/badge/c%2B%2B-11-blue) ![](https://img.shields.io/badge/release-v1.0-blue) ![](https://img.shields.io/badge/coverage-100%25-green) ![](https://img.shields.io/badge/license-mit-blue)
 
 ### 介绍
 Tiny-JSON 是一个用 C++11 实现的轻量化 JSON 解析和生成器（支持 JSON5），编码风格参考了 C++ 谷歌命名规范，无第三方库依赖，只依赖于标准库。
