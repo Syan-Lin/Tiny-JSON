@@ -65,6 +65,7 @@ class Value : public Parseable{
 public:
     // 拷贝控制成员
     Value();
+    Value(Null&&) noexcept;
     Value(const Object&);
     Value(Object&&) noexcept;
     Value(const Array&);
@@ -86,6 +87,10 @@ public:
     Value& operator=(const std::string&);
     Value& operator=(const Object&);
     Value& operator=(const Array&);
+    Value& operator=(const Number&);
+    Value& operator=(const String&);
+    Value& operator=(const Null&);
+    Value& operator=(const Boolean&);
     Value& operator=(const char[]);
     Value& operator[](const std::string&);
     Value& operator[](const size_t);
@@ -123,6 +128,7 @@ public:
     Object(Object&&) noexcept;            // 移动构造
     Object& operator=(const Object&);     // 拷贝赋值
     Object& operator=(Object&&) noexcept; // 移动赋值
+    // 若键值不存在，自动创建 null!
     Value& operator[](const Key&);
     ~Object() = default;
 
@@ -130,8 +136,6 @@ public:
     void add(const Key&, const Value&);
     // 删除键值对，如果不存在则无行为
     void remove(const Key&);
-    // 设置键值对，如果不存在则创建一个
-    void set(const Key&, const Value&);
     // 根据值类型
     Type getType(const Key&);
     // 是否有该键值
@@ -139,7 +143,7 @@ public:
     // Map 大小
     size_t size();
     // 清空键值对集合
-    void reset();
+    void clear();
 
     // 将键值对集合输出为字符串
     std::string parse() override;
@@ -168,46 +172,8 @@ public:
 
     // 在尾部添加元素
     void append(const Value&);
-    // 在尾部添加 String 元素
-    void append(const std::string&);
-    // 在尾部添加 String 元素
-    void append(const char[]);
-    // 在尾部添加 Boolean 元素
-    void append(const bool);
-    // 在尾部添加 Number 元素
-    void append(const double);
-    // 在尾部添加 Number 元素
-    void append(const int);
-    // 在尾部添加 Null 元素
-    void append();
     // 在指定位置之前添加元素
     void add(size_t, const Value&);
-    // 在指定位置之前添加 String 元素
-    void add(size_t, const std::string&);
-    // 在指定位置之前添加 String 元素
-    void add(size_t, const char[]);
-    // 在指定位置之前添加 Boolean 元素
-    void add(size_t, const bool);
-    // 在指定位置之前添加 Number 元素
-    void add(size_t, const double);
-    // 在指定位置之前添加 Number 元素
-    void add(size_t, const int);
-    // 在指定位置之前添加 Null 元素
-    void add(size_t);
-    // 设置指定位置的元素
-    void set(const size_t, const Value&);
-    // 设置指定位置的 String 元素
-    void set(const size_t, const std::string&);
-    // 设置指定位置的 String 元素
-    void set(const size_t, const char[]);
-    // 设置指定位置的 Boolean 元素
-    void set(const size_t, const bool);
-    // 设置指定位置的 Number 元素
-    void set(const size_t, const double);
-    // 设置指定位置的 Number 元素
-    void set(const size_t, const int);
-    // 设置指定位置的 Null 元素
-    void set(const size_t);
     // 删除指定位置的元素
     void del(const size_t);
     // 删除尾部元素
@@ -215,7 +181,7 @@ public:
     // 获取数组大小
     size_t size() const;
     // 清空数组
-    void reset();
+    void clear();
 
     // 将数组输出为字符串
     std::string parse() override;
@@ -236,6 +202,8 @@ class Number : public Parseable{
 public:
     // 拷贝控制成员
     Number();
+    Number(const Number&);
+    Number(Number&&) noexcept;
     Number(const double);
     Number(const int);
     Number& operator=(const double);
@@ -272,6 +240,8 @@ class Null : public Parseable{
 public:
     // 拷贝控制成员
     Null() = default;
+    Null(const Null&);
+    Null(Null&&) noexcept;
     ~Null() = default;
 
     // 输出 Null 字符串
@@ -287,6 +257,8 @@ class String : public Parseable{
 public:
     // 拷贝控制成员
     String();
+    String(const String&);
+    String(String&&) noexcept;
     String(const std::string&);
     String(const char[]);
     String(std::string&&) noexcept;             // 移动构造
@@ -295,7 +267,8 @@ public:
     String& operator=(std::string&&) noexcept;  // 移动赋值
     ~String() = default;
 
-    // 获取字符串
+    // 获取字符串，注意如果获得引用，修改字符串的值不可带有转义字符
+    // 如果需要带有转义字符，请使用其他设置字符串的接口
     std::string& get();
     // 获取 JSON 字符串
     std::string getJSON();
@@ -319,6 +292,8 @@ public:
     // 拷贝控制成员
     Boolean() = default;
     Boolean(const bool);
+    Boolean(const Boolean&);
+    Boolean(Boolean&&) noexcept;
     Boolean& operator=(const bool);
     ~Boolean() = default;
 

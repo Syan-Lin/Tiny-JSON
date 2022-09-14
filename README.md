@@ -32,6 +32,7 @@ string str = obj["string"].get<string>();
 double first = obj["array"][0].get<double>();
 string second = obj["array"][1].get<string>();
 bool third = obj["array"][2].get<bool>();
+obj["array"][2] = "change to string";
 
 // 2. 使用 C++ 对象生成 JSON 文件
 Object obj2 = {

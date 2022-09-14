@@ -54,32 +54,48 @@ void FuncTest(){
 
 // Object 类测试，覆盖率 100%
 void ObjectTest(){
-    // 四种初始化
+    // 初始化
     Object o1;
     o1.initFromJSON("{\"number\": 1.1}");   // 字符串初始化
     Object o2(o1);                          // Object(Object&)
     Object o3(move(Object()));              // Object(Object&&)
+    Object o3_ = {
+        {"key", 1432},
+        {"array", Array({1, 2, 3})},
+        {"obj", {
+            {"inside", "obj"},
+            {"hh", true}
+        }}
+    };
     assert(o1.size() == 1 && o1.parse() == "{\"number\": 1.1}");
     assert(o2.size() == 1 && o2.parse() == "{\"number\": 1.1}");
     assert(o3.size() == 0 && o3.parse() == "{}");
+    assert(o3_.size() == 3 && o3_.parse() == R"({"array": [1, 2, 3], "key": 1432, "obj": {"hh": true, "inside": "obj"}})");
 
-    // 两种赋值
+    // 赋值
     o3 = o1;        // operator=(Object&)
     assert(o3.size() == 1 && o3.parse() == "{\"number\": 1.1}");
     o3 = Object();  // operator=(Object&&)
     assert(o3.size() == 0 && o3.parse() == "{}");
+    o1["number"] = 5;
+    o3_["array"][2] = o1["number"];
+    o3["test"] = o3_["obj"];
+    assert(o1.size() == 1 && o1.parse() == "{\"number\": 5}");
+    assert(o3_.size() == 3 && o3_.parse() == R"({"array": [1, 2, 5], "key": 1432, "obj": {"hh": true, "inside": "obj"}})");
+    assert(o3.size() == 1 && o3.parse() == R"({"test": {"hh": true, "inside": "obj"}})");
 
     // 功能测试
+    o3.clear();
     o3.add("bool", false);
     o3.add("string", "abc");
-    o3.set("number", 5.2);
+    o3["number"] = 5.2;
     if(o3.has("number")){
         double v = o3["number"].get<double>();
         assert(v == 5.2);
     }
     o3.remove("number");
     assert(o3.parse() == "{\"bool\": false, \"string\": \"abc\"}");
-    o3.reset();
+    o3.clear();
     assert(o3.parse() == "{}");
 
     string json = "{"
@@ -113,7 +129,7 @@ void ObjectTest(){
 
 // Array 类测试，覆盖率 100%
 void ArrayTest(){
-    // 五种初始化
+    // 初始化
     Array a1;
     Array a2({3.14, false, Value(), "abc"});                // Array(initializer_list)
     Array a3(a2);                                           // Array(Array&)
@@ -128,7 +144,7 @@ void ArrayTest(){
     assert(a5.size() == 4 && a5.parse() == "[3.14, false, null, \"qwe\"]");
     assert(a5_.size() == 1 && a5_.parse() == "[3.14]");
 
-    // 两种赋值
+    // 赋值
     Array a6, a7;
     a6 = a2;                    // operator=(Array&)
     a7 = Array({1, 2, 3});      // operator=(Array&&)
@@ -136,30 +152,30 @@ void ArrayTest(){
     assert(a7.size() == 3 && a7.parse() == "[1, 2, 3]");
 
     // 功能测试
-    a7[0] = 6.28;           // 等价于 a7[0].set(6.28)
+    a7[0] = 6.28;
     a7[1] = true;
-    a7.append(Value(5));    // append(Value&)
-    a7.append("hello");     // append(char[]) -> append(string&)
-    a7.append(false);       // append(bool)
-    a7.append(3.14);        // append(double)
-    a7.append(3);           // append(int)
-    a7.append();            // append()
+    a7.append(Value(5));
+    a7.append("hello");
+    a7.append(false);
+    a7.append(3.14);
+    a7.append(3);
+    a7.append(Null());
     assert(a7.size() == 9 && a7.parse() == "[6.28, true, 3, 5, \"hello\", false, 3.14, 3, null]");
-    a7.reset();
+    a7.clear();
     assert(a7.size() == 0 && a7.parse() == "[]");
-    a7.add(0);                  // add(size_t)
-    a7.add(1, Value(false));    // add(size_t, Value&)
-    a7.add(2, "abc");           // add(size_t, char[]) -> add(size_t, string&)
-    a7.add(2, true);            // add(size_t, bool)
-    a7.add(4, 4);               // add(size_t, int)
-    a7.add(5, 6.3);             // add(size_t, double)
+    a7.add(0, Null());
+    a7.add(1, Value(false));
+    a7.add(2, "abc");
+    a7.add(2, true);
+    a7.add(4, 4);
+    a7.add(5, 6.3);
     assert(a7.size() == 6 && a7.parse() == "[null, false, true, \"abc\", 4, 6.3]");
-    a7.set(1);                  // set(size_t)
-    a7.set(0, 1);               // set(size_t, int)
-    a7.set(2, 1.1);             // set(size_t, double)
-    a7.set(3, true);            // set(size_t, bool)
-    a7.set(4, "hello");         // set(size_t, char[]) -> set(size_t, string&)
-    a7.set(5, Value());         // set(size_t, Value&)
+    a7[1] = Null();
+    a7[0] = 1;
+    a7[2] = 1.1;
+    a7[3] = true;
+    a7[4] = "hello";
+    a7[5] = Value();
     assert(a7.size() == 6 && a7.parse() == "[1, null, 1.1, true, \"hello\", null]");
     a7.del(0);
     a7.del(1);
@@ -187,7 +203,7 @@ void ArrayTest(){
 
 // Value 类测试，覆盖率 100%
 void ValueTest(){
-    // 十三种初始化
+    // 初始化
     Value v1;                       // 默认为 null
     Value v2(3.14);                 // Value(double)
     Value v2_(3);                   // Value(int)
@@ -207,6 +223,7 @@ void ValueTest(){
     Value v6_(move(temp));             // Value(Object&&)
     Value v7(v2);                   // Value(Value&) 等价于 Value v8 = v2
     Value v8(move(Value(true)));    // Value(Value&&) 等价于 Value v7 = Value(true)
+    Value v9 = Null();
     assert(v1.getType() == Type::kNull && v1.parse() == "null");
     assert(v2.getType() == Type::kNumber && v2.parse() == "3.14");
     assert(v2_.getType() == Type::kNumber && v2_.parse() == "3");
@@ -220,6 +237,7 @@ void ValueTest(){
     assert(v6_.getType() == Type::kObject && v6_.parse() == "{\"num\": 2.2}");
     assert(v7.getType() == Type::kNumber && v7.parse() == "3.14");
     assert(v8.getType() == Type::kBoolean && v8.parse() == "true");
+    assert(v9.getType() == Type::kNull && v9.parse() == "null");
 
     // 移动语义测试
     Value m1(move(Value(2.2)));
@@ -250,7 +268,7 @@ void ValueTest(){
     assert(s6.getType() == Type::kNumber && s6.parse() == "0x123");
     assert(s7.getType() == Type::kObject && s7.parse() == "{\"num\": 2.2}");
 
-    // 五种赋值
+    // 赋值
     s1 = 5.68;      // operator=(double)
     s6 = 5;         // operator=(int)
     s2 = false;     // operator=(bool)
@@ -263,8 +281,28 @@ void ValueTest(){
     assert(s4.getType() == Type::kBoolean && s4.parse() == "true");
     assert(s5.getType() == Type::kNull && s5.parse() == "null");
     assert(s6.getType() == Type::kNumber && s6.parse() == "0x5");
+    Value t1, t2, t3, t4, t5, t6;
+    t1 = Object({{"hello", 123}});
+    t2 = Array({1, 2, 3});
+    t3 = Number(1);
+    t4 = Null();
+    t5 = Boolean(true);
+    t6 = String("10");
+    assert(t1.getType() == Type::kObject && t1.parse() == "{\"hello\": 123}");
+    assert(t2.getType() == Type::kArray && t2.parse() == "[1, 2, 3]");
+    assert(t3.getType() == Type::kNumber && t3.parse() == "1");
+    assert(t4.getType() == Type::kNull && t4.parse() == "null");
+    assert(t5.getType() == Type::kBoolean && t5.parse() == "true");
+    assert(t6.getType() == Type::kString && t6.parse() == "\"10\"");
 
     // 功能测试
+    assert(t1.get<Object>().parse() == "{\"hello\": 123}");
+    assert(t2.get<Array>().parse() == "[1, 2, 3]");
+    assert(t3.get<int>() == 1);
+    assert(t3.getNumber().getType() == NumberType::kInteger);
+    assert(t4.get<Null>().parse() == "null");
+    assert(t5.get<bool>() == true);
+    assert(t6.get<string>() == "10");
     v2 = 6.15;
     v3 = false;
     v4 = "ABC";
@@ -361,7 +399,7 @@ void RegExTest(){
 
 // Number 类测试，覆盖率 100%
 void NumberTest(){
-    // 五种初始化
+    // 初始化
     double d = 3.14;
     double i = 3;
     Number n1;                      // 默认为十进制 0
@@ -378,10 +416,10 @@ void NumberTest(){
     assert(n5.getInt() == 11256099 && n5.parse() == "0xabc123" && n5.getType() == NumberType::kHex);
     assert(n6.getInt() == 3 && n6.parse() == "3" && n6.getType() == NumberType::kInteger);
 
-    // 两种赋值
+    // 赋值
     Number n7, n8;
     n7 = 3.14;                     // operator=(double)
-    n8 = 3;                        // operator=(Number&)
+    n8 = 3;                        // operator=(int)
     assert(n7.getDouble() == 3.14 && n7.parse() == "3.14" && n7.getType() == NumberType::kDefault);
     assert(n8.getInt() == 3 && n8.parse() == "3" && n8.getType() == NumberType::kInteger);
 
@@ -450,7 +488,7 @@ void NumberTest(){
 
 // Null 类测试，覆盖率 100%
 void NullTest(){
-    // 两种初始化
+    // 初始化
     Null n1, n2;
     n2.initFromJSON("null");
     assert(n1.parse() == "null");
@@ -464,18 +502,26 @@ void NullTest(){
 
 // String 类测试，覆盖率 100%
 void StringTest(){
-    // 七种初始化
+    // 初始化
     string str = "test\nnext\tline\n";
     String s1(str);                             // String(string&)
+    String s2(s1);                              // String(String&)
     String s3("a String");                      // String(char[]) -> String(string&&)
     String s4(string("a string"));              // String(string&&)
     String s5;                                  // String()
+    String s6(move(String("move String")));     // String(String&&)
+                                                // 这里实际上会经过 String(char[]) -> String(string&&) -> String(String&&)
+                                                // 不过前两步是构造 String("move String") 这个右值对象
     String s7;                                  // 字符串初始化
     s7.initFromJSON("\"initFromJSON\"");
     assert(s1.get() == "test\nnext\tline\n");
     assert(s1.getJSON() == "\"test\\nnext\\tline\\n\"");
     assert(s1.parse() == "\"test\\nnext\\tline\\n\"");
     assert(s1.getJSON() == "\"test\\nnext\\tline\\n\"");
+    assert(s2.get() == "test\nnext\tline\n");
+    assert(s2.getJSON() == "\"test\\nnext\\tline\\n\"");
+    assert(s2.parse() == "\"test\\nnext\\tline\\n\"");
+    assert(s2.getJSON() == "\"test\\nnext\\tline\\n\"");
     assert(s3.get() == "a String");
     assert(s3.getJSON() == "\"a String\"");
     assert(s3.parse() == "\"a String\"");
@@ -488,16 +534,25 @@ void StringTest(){
     assert(s5.getJSON() == "\"\"");
     assert(s5.parse() == "\"\"");
     assert(s5.getJSON() == "\"\"");
+    assert(s6.get() == "move String");
+    assert(s6.getJSON() == "\"move String\"");
+    assert(s6.parse() == "\"move String\"");
+    assert(s6.getJSON() == "\"move String\"");
     assert(s7.get() == "initFromJSON");
     assert(s7.getJSON() == "\"initFromJSON\"");
     assert(s7.parse() == "\"initFromJSON\"");
     assert(s7.getJSON() == "\"initFromJSON\"");
 
-    // 五种赋值
-    String s10, s11;
+    // 赋值
+    String s8, s10, s11;
+    s8 = str;                                     // operator=(string&)
     s10 = string("test\nnext\tline\n");           // operator=(string&&)
     s11 = "test\nnext\tline\n";                   // operator=(char[])
-   assert(s10.get() == "test\nnext\tline\n");
+    assert(s8.get() == "test\nnext\tline\n");
+    assert(s8.getJSON() == "\"test\\nnext\\tline\\n\"");
+    assert(s8.parse() == "\"test\\nnext\\tline\\n\"");
+    assert(s8.getJSON() == "\"test\\nnext\\tline\\n\"");
+    assert(s10.get() == "test\nnext\tline\n");
     assert(s10.getJSON() == "\"test\\nnext\\tline\\n\"");
     assert(s10.parse() == "\"test\\nnext\\tline\\n\"");
     assert(s10.getJSON() == "\"test\\nnext\\tline\\n\"");
@@ -505,6 +560,23 @@ void StringTest(){
     assert(s11.getJSON() == "\"test\\nnext\\tline\\n\"");
     assert(s11.parse() == "\"test\\nnext\\tline\\n\"");
     assert(s11.getJSON() == "\"test\\nnext\\tline\\n\"");
+
+    // 功能测试
+    s1 = "this is a message";
+    assert(s1.get() == "this is a message");
+    assert(s1.getJSON() == "\"this is a message\"");
+    assert(s1.parse() == "\"this is a message\"");
+    assert(s1.getJSON() == "\"this is a message\"");
+    s1 = string("abc");
+    assert(s1.get() == "abc");
+    assert(s1.getJSON() == "\"abc\"");
+    assert(s1.parse() == "\"abc\"");
+    assert(s1.getJSON() == "\"abc\"");
+    s1 = "";
+    assert(s1.get() == "");
+    assert(s1.getJSON() == "\"\"");
+    assert(s1.parse() == "\"\"");
+    assert(s1.getJSON() == "\"\"");
 
     // 转义字符测试
     String c;
@@ -529,7 +601,7 @@ void StringTest(){
 
 // Boolean 类测试，覆盖率 100%
 void BooleanTest(){
-    // 五种初始化
+    // 初始化
     Boolean b1;                     // 默认为 false
     Boolean b2 = true;              // Boolean(bool)
     Boolean b3;
@@ -540,9 +612,8 @@ void BooleanTest(){
     assert(!b3.get() && b3.parse() == "false");
     assert(b4.get() && b4.parse() == "true");
 
-    // 两种赋值
+    // 赋值
     Boolean b5, b6;
-    b5 = b1;
     b6 = true;
     assert(!b5.get() && b5.parse() == "false");
     assert(b6.get() && b6.parse() == "true");

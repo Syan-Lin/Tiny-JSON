@@ -30,8 +30,7 @@ void example(){
     eyes_color = "blue";
     hair_style = "wavy";
 
-    int& height = obj["person"]["heightInInches"].get<int>();
-    height = 65;
+    obj["person"]["heightInInches"] = 65;
 
     cout << parse(obj) << endl;
 

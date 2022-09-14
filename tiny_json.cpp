@@ -1,9 +1,9 @@
 
 /**************************
 * @author   Yuan.
-* @date     2022/9/1
+* @date     2022/9/13
 * @brief    tiny_json 实现
-* @version  v0.1 alpha
+* @version  v1.0 release
 ***************************/
 
 #include "tiny_json.h"
@@ -177,11 +177,7 @@ tiny_json::Object& tiny_json::Object::operator=(Object&& obj) noexcept {
     kv_map_ = std::move(obj.kv_map_);
     return *this;
 }
-tiny_json::Value& tiny_json::Object::operator[](const Key& key){
-    if(!has(key)){
-        std::cout << "[tiny_json_Warning_Object]: Key: " << key
-        << " 不存在，自动创建 Null!" << std::endl;
-    }
+tiny_json::Value& tiny_json::Object::operator[](const Key& key){\
     return kv_map_[key];
 }
 
@@ -201,16 +197,13 @@ void tiny_json::Object::remove(const Key& key){
         << " 不存在!" << std::endl;
     }
 }
-void tiny_json::Object::set(const Key& key, const Value& val){
-    kv_map_[key] = val;
-}
 tiny_json::Type tiny_json::Object::getType(const Key& key){
     return kv_map_[key].getType();
 }
 bool tiny_json::Object::has(const Key& key){
     return kv_map_.find(key) != kv_map_.end();
 }
-void tiny_json::Object::reset(){
+void tiny_json::Object::clear(){
     kv_map_.clear();
 }
 size_t tiny_json::Object::size(){ return kv_map_.size(); }
@@ -316,6 +309,7 @@ void tiny_json::Object::initKV(const std::string& str){
 
 // 拷贝控制成员
 tiny_json::Value::Value(): type_(Type::kNull), val_(std::make_shared<Null>()){}
+tiny_json::Value::Value(Null&&) noexcept : Value(){}
 tiny_json::Value::Value(const double val): type_(Type::kNumber), val_(std::make_shared<Number>(val)){}
 tiny_json::Value::Value(const int val): type_(Type::kNumber), val_(std::make_shared<Number>(val)){}
 tiny_json::Value::Value(const bool val): type_(Type::kBoolean), val_(std::make_shared<Boolean>(val)){}
@@ -432,6 +426,26 @@ tiny_json::Value& tiny_json::Value::operator=(const char str[]){
 tiny_json::Value& tiny_json::Value::operator=(const Object& val){
     type_ = Type::kObject;
     val_ = std::make_shared<Object>(val);
+    return *this;
+}
+tiny_json::Value& tiny_json::Value::operator=(const Number& val){
+    type_ = Type::kNumber;
+    val_ = std::make_shared<Number>(val);
+    return *this;
+}
+tiny_json::Value& tiny_json::Value::operator=(const String& val){
+    type_ = Type::kString;
+    val_ = std::make_shared<String>(val);
+    return *this;
+}
+tiny_json::Value& tiny_json::Value::operator=(const Null& val){
+    type_ = Type::kNull;
+    val_ = std::make_shared<Null>(val);
+    return *this;
+}
+tiny_json::Value& tiny_json::Value::operator=(const Boolean& val){
+    type_ = Type::kBoolean;
+    val_ = std::make_shared<Boolean>(val);
     return *this;
 }
 tiny_json::Value& tiny_json::Value::operator=(const Array& val){
@@ -600,96 +614,11 @@ tiny_json::Value& tiny_json::Array::get(size_t index){
     return arr_[index];
 }
 size_t tiny_json::Array::size() const { return arr_.size(); }
-void tiny_json::Array::reset(){ arr_.clear(); }
+void tiny_json::Array::clear(){ arr_.clear(); }
 void tiny_json::Array::append(const Value& val){ arr_.emplace_back(val); }
-void tiny_json::Array::append(const std::string& str){ arr_.emplace_back(Value(str)); }
-void tiny_json::Array::append(const char str[]){ append(std::string(str)); }
-void tiny_json::Array::append(const bool val){ arr_.emplace_back(Value(val)); }
-void tiny_json::Array::append(const double val){ arr_.emplace_back(Value(val)); }
-void tiny_json::Array::append(const int val){ arr_.emplace_back(Value(val)); }
-void tiny_json::Array::append(){ arr_.emplace_back(Value()); }
 void tiny_json::Array::add(size_t index, const Value& val){
     if(checkIndexAdd(index)){
         arr_.emplace(arr_.begin() + index, val);
-    }
-}
-void tiny_json::Array::add(size_t index, const std::string& str){
-    if(checkIndexAdd(index)){
-        arr_.emplace(arr_.begin() + index, Value(str));
-    }
-}
-void tiny_json::Array::add(size_t index, const char str[]){
-    add(index, std::string(str));
-}
-void tiny_json::Array::add(size_t index, const bool val){
-    if(checkIndexAdd(index)){
-        arr_.emplace(arr_.begin() + index, Value(val));
-    }
-}
-void tiny_json::Array::add(size_t index, const double val){
-    if(checkIndexAdd(index)){
-        arr_.emplace(arr_.begin() + index, Value(val));
-    }
-}
-void tiny_json::Array::add(size_t index, const int val){
-    if(checkIndexAdd(index)){
-        arr_.emplace(arr_.begin() + index, Value(val));
-    }
-}
-void tiny_json::Array::add(size_t index){
-    if(checkIndexAdd(index)){
-        arr_.emplace(arr_.begin() + index, Value());
-    }
-}
-void tiny_json::Array::set(const size_t index, const Value& val){
-    if(checkIndex(index)){
-        arr_[index] = val;
-    }
-}
-void tiny_json::Array::set(const size_t index, const std::string& str){
-    if(checkIndex(index)){
-        if(arr_[index].getType() == Type::kString){
-            arr_[index] = str;
-        }else{
-            arr_[index] = Value(str);
-        }
-    }
-}
-void tiny_json::Array::set(const size_t index, const char str[]){
-    set(index, std::string(str));
-}
-void tiny_json::Array::set(const size_t index, const bool val){
-    if(checkIndex(index)){
-        if(arr_[index].getType() == Type::kBoolean){
-            arr_[index] = val;
-        }else{
-            arr_[index] = Value(val);
-        }
-    }
-}
-void tiny_json::Array::set(const size_t index, const double val){
-    if(checkIndex(index)){
-        if(arr_[index].getType() == Type::kNumber){
-            arr_[index] = val;
-        }else{
-            arr_[index] = Value(val);
-        }
-    }
-}
-void tiny_json::Array::set(const size_t index, const int val){
-    if(checkIndex(index)){
-        if(arr_[index].getType() == Type::kNumber){
-            arr_[index] = val;
-        }else{
-            arr_[index] = Value(val);
-        }
-    }
-}
-void tiny_json::Array::set(const size_t index){
-    if(checkIndex(index)){
-        if(arr_[index].getType() != Type::kNull){
-            arr_[index] = Value();
-        }
     }
 }
 void tiny_json::Array::pop(){
@@ -803,6 +732,20 @@ void tiny_json::Array::initFromJSON(const std::string& val){
 
 // 拷贝控制成员
 tiny_json::Number::Number(): num_double_(0), type_(NumberType::kDefault){}
+tiny_json::Number::Number(const Number& val): type_(val.type_){
+    if(type_ == NumberType::kDefault || type_ == NumberType::kFloat){
+        num_double_ = val.num_double_;
+    }else{
+        num_int_ = val.num_int_;
+    }
+}
+tiny_json::Number::Number(Number&& val) noexcept : type_(std::move(val.type_)){
+    if(type_ == NumberType::kDefault || type_ == NumberType::kFloat){
+        num_double_ = std::move(val.num_double_);
+    }else{
+        num_int_ = std::move(val.num_int_);
+    }
+}
 tiny_json::Number::Number(const double val) : num_double_(val){
     bool is_integer = (static_cast<long long>(val) == val);
     if(is_integer){
@@ -979,6 +922,10 @@ void tiny_json::Number::initFromJSON(const std::string& str){
 * @test     100%
 ***************************/
 
+// 拷贝控制成员
+tiny_json::Null::Null(const Null&){}
+tiny_json::Null::Null(Null&&) noexcept {}
+
 // 功能成员
 std::string tiny_json::Null::parse(){ return "null"; }
 void tiny_json::Null::initFromJSON(const std::string& str){
@@ -999,6 +946,11 @@ void tiny_json::Null::initFromJSON(const std::string& str){
 // 拷贝控制成员
 tiny_json::String::String(){ parse(); }
 tiny_json::String::String(const std::string& str): str_(str){ parse(); }
+tiny_json::String::String(const String& val): str_(val.str_), parsed_str_(val.parsed_str_)
+                                                , is_parsed_(val.is_parsed_){}
+tiny_json::String::String(String&& val) noexcept : str_(std::move(val.str_))
+                                                , parsed_str_(std::move(val.parsed_str_))
+                                                , is_parsed_(val.is_parsed_){}
 tiny_json::String::String(const char str[]): String(std::string(str)){}
 tiny_json::String::String(std::string&& str) noexcept : str_(std::move(str)){ parse(); }
 tiny_json::String& tiny_json::String::operator=(const std::string& str){
@@ -1021,7 +973,6 @@ tiny_json::String& tiny_json::String::operator=(const char str[]){
 }
 
 std::string& tiny_json::String::get(){
-    is_parsed_ = false;
     return str_;
 }
 std::string tiny_json::String::getJSON(){ return parse(); }
@@ -1183,6 +1134,8 @@ void tiny_json::String::initFromJSON(const std::string& str){
 
 // 拷贝控制成员
 tiny_json::Boolean::Boolean(const bool val): bool_(val) {}
+tiny_json::Boolean::Boolean(const Boolean& val): bool_(val.bool_){}
+tiny_json::Boolean::Boolean(Boolean&& val) noexcept : bool_(std::move(val.bool_)) {}
 tiny_json::Boolean& tiny_json::Boolean::operator=(const bool val){
     bool_ = val;
     return *this;
