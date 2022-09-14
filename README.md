@@ -14,6 +14,7 @@ Tiny-JSON 是一个用 C++11 实现的轻量化 JSON 解析和生成器（支持
 编译器版本：`gcc version 8.1.0 (x86_64-posix-seh-rev0)`
 
 ```cpp
+#include "tiny_json.h"
 using namespace tiny_json;
 
 // 1. 读取 JSON 并转化为 C++ 对象
