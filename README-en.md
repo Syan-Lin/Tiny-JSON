@@ -56,3 +56,4 @@ string json2 = parse(obj2);
 
 ### TODO
 - [x] JSON5 fully supported
+- [ ] Normal pointer version
