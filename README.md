@@ -56,3 +56,4 @@ string json2 = parse(obj2);
 
 ### TODO
 - [x] JSON5 完全支持
+- [ ] 普通指针版本
