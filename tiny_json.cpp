@@ -153,6 +153,9 @@ void tiny_json::removeAnnotation(std::string& str){
         }
     }
 }
+tiny_json::NullSingleton& tiny_json::Null(){
+    return *NullSingleton::instance();
+}
 
 /**************************
 * @author   Yuan.
@@ -301,8 +304,8 @@ void tiny_json::Object::initKV(const std::string& str){
 ***************************/
 
 // 拷贝控制成员
-tiny_json::Value::Value(): type_(Type::kNull), val_(std::make_shared<Null>()){}
-tiny_json::Value::Value(Null&&) noexcept : Value(){}
+tiny_json::Value::Value(): type_(Type::kNull), val_(NullSingleton::instance()){}
+tiny_json::Value::Value(const NullSingleton&): Value(){}
 tiny_json::Value::Value(const double val): type_(Type::kNumber), val_(std::make_shared<Number>(val)){}
 tiny_json::Value::Value(const int val): type_(Type::kNumber), val_(std::make_shared<Number>(val)){}
 tiny_json::Value::Value(const bool val): type_(Type::kBoolean), val_(std::make_shared<Boolean>(val)){}
@@ -404,7 +407,7 @@ tiny_json::Number& tiny_json::Value::getNumber(){
 }
 void tiny_json::Value::reset(){
     type_ = Type::kNull;
-    val_ = std::make_shared<Null>();
+    val_ = NullSingleton::instance();
 }
 template<> double& tiny_json::Value::get<double>(){
     if(type_ != Type::kNumber){
@@ -430,12 +433,6 @@ template<> std::string& tiny_json::Value::get<std::string>(){
     }
     return static_cast<String&>(*val_).get();
 }
-template<> tiny_json::Null& tiny_json::Value::get<tiny_json::Null>(){
-    if(type_ != Type::kNull){
-        Log::error("Value", "返回类型不符合: " + parse());
-    }
-    return static_cast<Null&>(*val_);
-}
 template<> tiny_json::Array& tiny_json::Value::get<tiny_json::Array>(){
     if(type_ != Type::kArray){
         Log::error("Value", "返回类型不符合: " + parse());
@@ -447,6 +444,13 @@ template<> tiny_json::Object& tiny_json::Value::get<tiny_json::Object>(){
         Log::error("Value", "返回类型不符合: " + parse());
     }
     return static_cast<Object&>(*val_);
+}
+bool tiny_json::Value::isNull(){
+    if(val_ == NullSingleton::instance()){
+        return true;
+    }else{
+        return false;
+    }
 }
 
 std::string tiny_json::Value::parse(){
@@ -471,8 +475,7 @@ void tiny_json::Value::initFromJSON(const std::string& str){
         val_->initFromJSON(str);
         type_ = Type::kBoolean;
     }else if(regex_match(str, kPatternNull)){
-        val_ = std::make_shared<Null>();
-        val_->initFromJSON(str);
+        val_ = NullSingleton::instance();
         type_ = Type::kNull;
     }else if(regex_match(str, kPatternArray)){
         val_ = std::make_shared<Array>();
@@ -816,13 +819,19 @@ void tiny_json::Number::initFromJSON(const std::string& str){
 * @test     100%
 ***************************/
 
+std::shared_ptr<tiny_json::NullSingleton> tiny_json::NullSingleton::instance_ = nullptr;
+
 // 拷贝控制成员
-tiny_json::Null::Null(const Null&){}
-tiny_json::Null::Null(Null&&) noexcept {}
+std::shared_ptr<tiny_json::NullSingleton> tiny_json::NullSingleton::instance(){
+    if(instance_ == nullptr){
+        instance_ = std::shared_ptr<NullSingleton>(new NullSingleton());
+    }
+    return instance_;
+}
 
 // 功能成员
-std::string tiny_json::Null::parse(){ return "null"; }
-void tiny_json::Null::initFromJSON(const std::string& str){
+std::string tiny_json::NullSingleton::parse(){ return "null"; }
+void tiny_json::NullSingleton::initFromJSON(const std::string& str){
     if(!parseable(str, Type::kNull)){
         Log::error("Null", "字符串 " + str + " 不能转化为 Null 对象!");
     }

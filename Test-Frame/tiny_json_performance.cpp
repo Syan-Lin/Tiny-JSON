@@ -106,9 +106,9 @@ void tiny_json_performance::Performance::run(){
     string time = to_string(parse_time);
     string blank((63 - time.size()) / 2, ' ');
     if(time.size() % 2 == 0){
-        time = "|" + blank + time + blank + "|";
-    }else{
         time = "|" + blank + time + blank + " |";
+    }else{
+        time = "|" + blank + time + blank + "|";
     }
     Log::print(time);
     Log::print("[===============================================================]");

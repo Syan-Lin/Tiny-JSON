@@ -65,10 +65,10 @@ void tiny_json_test::Test::ExpectTrue(bool condition, std::string info){
         passed_count_++;
     }else{
         if(info.size() == 0){
-            Log::print("Expected true but get false in case "
+            Log::print("Expected <true> but get <false> in case "
             + std::to_string(failed_count_ + passed_count_), Color::kRed);
         }else{
-            Log::print("Expected true but get false in " + info, Color::kRed);
+            Log::print("Expected <true> but get <false> in " + info, Color::kRed);
         }
         failed_count_++;
     }
@@ -80,10 +80,10 @@ void tiny_json_test::Test::ExpectFalse(bool condition, std::string info){
         passed_count_++;
     }else{
         if(info.size() == 0){
-            Log::print("Expected false but get true in case "
+            Log::print("Expected <false> but get <true> in case "
             + std::to_string(failed_count_ + passed_count_), Color::kRed);
         }else{
-            Log::print("Expected false but get true in " + info, Color::kRed);
+            Log::print("Expected <false> but get <true> in " + info, Color::kRed);
         }
         failed_count_++;
     }
@@ -95,12 +95,12 @@ void tiny_json_test::Test::ExpectInt(int expect, int number, std::string info){
         passed_count_++;
     }else{
         if(info.size() == 0){
-            Log::print("Expected " + std::to_string(expect) + " but get "
-            + std::to_string(number) + " in case "
+            Log::print("Expected <" + std::to_string(expect) + "> but get <"
+            + std::to_string(number) + "> in case "
             + std::to_string(failed_count_ + passed_count_), Color::kRed);
         }else{
-            Log::print("Expected " + std::to_string(expect) + " but get "
-            + std::to_string(number) + " in " + info, Color::kRed);
+            Log::print("Expected <" + std::to_string(expect) + "> but get <"
+            + std::to_string(number) + "> in " + info, Color::kRed);
         }
         failed_count_++;
     }
@@ -112,12 +112,12 @@ void tiny_json_test::Test::ExpectDouble(double expect, double number, std::strin
         passed_count_++;
     }else{
         if(info.size() == 0){
-            Log::print("Expected " + std::to_string(expect) + " but get "
-            + std::to_string(number) + " in case "
+            Log::print("Expected <" + std::to_string(expect) + "> but get <"
+            + std::to_string(number) + "> in case "
             + std::to_string(failed_count_ + passed_count_), Color::kRed);
         }else{
-            Log::print("Expected " + std::to_string(expect) + " but get "
-            + std::to_string(number) + " in " + info, Color::kRed);
+            Log::print("Expected <" + std::to_string(expect) + "> but get <"
+            + std::to_string(number) + "> in " + info, Color::kRed);
         }
         failed_count_++;
     }
@@ -129,10 +129,10 @@ void tiny_json_test::Test::ExpectString(std::string expect, std::string str, std
         passed_count_++;
     }else{
         if(info.size() == 0){
-            Log::print("Expected " + expect + " but get "
-            + str + " in case " + std::to_string(failed_count_ + passed_count_), Color::kRed);
+            Log::print("Expected <" + expect + "> but get <"
+            + str + "> in case " + std::to_string(failed_count_ + passed_count_), Color::kRed);
         }else{
-            Log::print("Expected " + expect + " but get " + str + " in " + info, Color::kRed);
+            Log::print("Expected <" + expect + "> but get <" + str + "> in " + info, Color::kRed);
         }
         failed_count_++;
     }

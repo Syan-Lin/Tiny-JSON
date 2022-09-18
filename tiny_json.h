@@ -20,7 +20,7 @@ class Value;
 class Object;
 class Array;
 class Number;
-class Null;
+class NullSingleton;
 class String;
 class Boolean;
 
@@ -70,8 +70,8 @@ class Value : public Parseable{
 public:
     // 拷贝控制成员
     Value();
-    Value(Null&&) noexcept;
     Value(const Object&);
+    Value(const NullSingleton&);
     Value(Object&&) noexcept;
     Value(const Array&);
     Value(Array&&) noexcept;
@@ -102,6 +102,8 @@ public:
     Number& getNumber();
     // 重置值为 Null
     void reset();
+    // 判断是否为空
+    bool isNull();
 
     // 将值输出为字符串
     std::string parse() override;
@@ -234,19 +236,21 @@ private:
     size_t decimal_place_ = 6;
 };
 
-// 空类型
-class Null : public Parseable{
+// 空类型，全局共用一个 Null 对象
+extern NullSingleton& Null();
+class NullSingleton : public Parseable{
 public:
+    static std::shared_ptr<NullSingleton> instance();
     // 拷贝控制成员
-    Null() = default;
-    Null(const Null&);
-    Null(Null&&) noexcept;
-    ~Null() = default;
+    ~NullSingleton() = default;
 
     // 输出 Null 字符串
     std::string parse() override;
     // 用字符串初始化对象
     void initFromJSON(const std::string&) override;
+private:
+    static std::shared_ptr<NullSingleton> instance_;
+    NullSingleton() = default;
 };
 
 // 字符串类型

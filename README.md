@@ -51,10 +51,81 @@ string json2 = parse(obj2);
 
 >更多示例请看 `tiny_json_example.cpp` 和 `tiny_json_test.cpp`
 
+### 测试
+#### 用例测试
+测试框架中简单定义了一些断言，用于判断布尔值、数值和字符串，当断言为假时，会打印相应的代码信息，例如：
+```
+============================================
+Run Test: Test
+Expected <2> but get <1> in D:\Tiny-JSON\Test-Frame\tiny_json_test.cpp at line: 871
+Expected <true> but get <false> in D:\Tiny-JSON\Test-Frame\tiny_json_test.cpp at line: 872
+Expected <Hello!> but get <Hello> in D:\Tiny-JSON\Test-Frame\tiny_json_test.cpp at line: 873
+0/3 Cases passed. (0%)
+Test failed!
+==================Test End==================
+```
+通过 `tiny_json_test::Test::show_details_ = true` 可以展示详细断言信息：
+```
+============================================
+Run Test: Test
+Expected <2> but get <1> in D:\Tiny-JSON\Test-Frame\tiny_json_test.cpp at line: 871
+Expected <true> but get <false> in D:\Tiny-JSON\Test-Frame\tiny_json_test.cpp at line: 872
+Expected <Hello!> but get <Hello> in D:\Tiny-JSON\Test-Frame\tiny_json_test.cpp at line: 873
+ExpectInt Check!
+ExpectFalse Check!
+ExpectString Check!
+3/6 Cases passed. (50%)
+Test failed!
+==================Test End==================
+```
+#### 性能测试
+定义在 `tiny_json_performance.h` 中，可以单独设置各类型的规模，以查看其实际性能表现
+
+测试样例如下：
+- Null: `{ "#nullx": null }`
+- Array: `{ "#arrayx": [1, "string", true, null] }`
+- Object: `{ "#objectx": {{"number", 1}, {"string", "hello"}, {"bool", false}, {"null", null}} }`
+- String: `{ "#stringx": "Hello World!" }`
+- Number: `{ "#numberx": "31415" }`
+- Boolean: `{ "#boolx": true }`
+```
+[===============================================================]
+[--------------- Run tiny_json performance test ----------------]
+|     Null  |  Array  |  Object |  String | Number  | Boolean   |
+[----------------------- scale of types ------------------------]
+|    100    |  100    |  100    |  100    |  100    |  100      |
+[--------------------- construct time (ms) ---------------------]
+|    0      |  0      |  0      |  0      |  0      |  0        |
+[----------------------- parse time (ms) -----------------------]
+|                              16                               |
+[===============================================================]
+[===============================================================]
+[--------------- Run tiny_json performance test ----------------]
+|     Null  |  Array  |  Object |  String | Number  | Boolean   |
+[----------------------- scale of types ------------------------]
+|    1000   |  1000   |  1000   |  1000   |  1000   |  1000     |
+[--------------------- construct time (ms) ---------------------]
+|    79     |  62     |  0      |  0      |  16     |  0        |
+[----------------------- parse time (ms) -----------------------]
+|                              31                               |
+[===============================================================]
+[===============================================================]
+[--------------- Run tiny_json performance test ----------------]
+|     Null  |  Array  |  Object |  String | Number  | Boolean   |
+[----------------------- scale of types ------------------------]
+|    10000  |  10000  |  10000  |  10000  |  10000  |  10000    |
+[--------------------- construct time (ms) ---------------------]
+|    688    |  891    |  125    |  46     |  16     |  31       |
+[----------------------- parse time (ms) -----------------------]
+|                             7250                              |
+[===============================================================]
+```
+
 ### UML 图
 ![uml](uml.jpg)
 
 ### TODO
 - [x] JSON5 完全支持
-- [ ] 测试框架
+- [x] 测试框架
 - [ ] 普通指针版本
+- [ ] 性能优化

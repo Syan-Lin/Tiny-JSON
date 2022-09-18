@@ -51,10 +51,81 @@ string json2 = parse(obj2);
 
 >More examples in `tiny_json_example.cpp` and `tiny_json_test.cpp`
 
+### Tests
+#### Cases Tests
+The test frame defined some simple asserts, which are used to judge bool value, number or string. When a assert is false, it will print corresponding code infomation, like:
+```
+============================================
+Run Test: Test
+Expected <2> but get <1> in D:\Tiny-JSON\Test-Frame\tiny_json_test.cpp at line: 871
+Expected <true> but get <false> in D:\Tiny-JSON\Test-Frame\tiny_json_test.cpp at line: 872
+Expected <Hello!> but get <Hello> in D:\Tiny-JSON\Test-Frame\tiny_json_test.cpp at line: 873
+0/3 Cases passed. (0%)
+Test failed!
+==================Test End==================
+```
+You can show more assert infomation with command `tiny_json_test::Test::show_details_ = true`
+```
+============================================
+Run Test: Test
+Expected <2> but get <1> in D:\Tiny-JSON\Test-Frame\tiny_json_test.cpp at line: 871
+Expected <true> but get <false> in D:\Tiny-JSON\Test-Frame\tiny_json_test.cpp at line: 872
+Expected <Hello!> but get <Hello> in D:\Tiny-JSON\Test-Frame\tiny_json_test.cpp at line: 873
+ExpectInt Check!
+ExpectFalse Check!
+ExpectString Check!
+3/6 Cases passed. (50%)
+Test failed!
+==================Test End==================
+```
+#### Performance tests
+Performance tests are defined in `tiny_json_performance.h`, which could set the scale of types separately to see its actual performance.
+
+Test cases defined below:
+- Null: `{ "#nullx": null }`
+- Array: `{ "#arrayx": [1, "string", true, null] }`
+- Object: `{ "#objectx": {{"number", 1}, {"string", "hello"}, {"bool", false}, {"null", null}} }`
+- String: `{ "#stringx": "Hello World!" }`
+- Number: `{ "#numberx": "31415" }`
+- Boolean: `{ "#boolx": true }`
+```
+[===============================================================]
+[--------------- Run tiny_json performance test ----------------]
+|     Null  |  Array  |  Object |  String | Number  | Boolean   |
+[----------------------- scale of types ------------------------]
+|    100    |  100    |  100    |  100    |  100    |  100      |
+[--------------------- construct time (ms) ---------------------]
+|    0      |  0      |  0      |  0      |  0      |  0        |
+[----------------------- parse time (ms) -----------------------]
+|                              16                               |
+[===============================================================]
+[===============================================================]
+[--------------- Run tiny_json performance test ----------------]
+|     Null  |  Array  |  Object |  String | Number  | Boolean   |
+[----------------------- scale of types ------------------------]
+|    1000   |  1000   |  1000   |  1000   |  1000   |  1000     |
+[--------------------- construct time (ms) ---------------------]
+|    79     |  62     |  0      |  0      |  16     |  0        |
+[----------------------- parse time (ms) -----------------------]
+|                              31                               |
+[===============================================================]
+[===============================================================]
+[--------------- Run tiny_json performance test ----------------]
+|     Null  |  Array  |  Object |  String | Number  | Boolean   |
+[----------------------- scale of types ------------------------]
+|    10000  |  10000  |  10000  |  10000  |  10000  |  10000    |
+[--------------------- construct time (ms) ---------------------]
+|    688    |  891    |  125    |  46     |  16     |  31       |
+[----------------------- parse time (ms) -----------------------]
+|                             7250                              |
+[===============================================================]
+```
+
 ### UML Diagram
 ![uml](uml.jpg)
 
 ### TODO
 - [x] JSON5 fully supported
-- [ ] Test frame
+- [x] Test frame
 - [ ] Normal pointer version
+- [ ] Optimize performance

@@ -397,7 +397,7 @@ void ValueTest(){
     EXPECT_INT(test, 1, t2[0].get<int>());
     EXPECT_INT(test, 1, t3.get<int>());
     EXPECT_TRUE(test, t3.getNumber().getType() == NumberType::kInteger);
-    EXPECT_STRING(test, "null", t4.get<Null>().parse());
+    EXPECT_STRING(test, "null", t4.parse());
     EXPECT_TRUE(test, t5.get<bool>());
     EXPECT_STRING(test, "10", t6.get<string>());
     v2 = 6.15;
@@ -658,15 +658,14 @@ void NullTest(){
     Test test("NullTest");
 
     // 初始化
-    Null n1, n2;
-    n2.initFromJSON("null");
-    EXPECT_STRING(test, "null", n1.parse());
-    EXPECT_STRING(test, "null", n2.parse());
+    auto n = NullSingleton::instance();
+    n->initFromJSON("null");
+    EXPECT_STRING(test, "null", n->parse());
 
     // 错误测试
-    // Null n3;
-    // n3.initFromJSON("abc");     // 无法转成 Null 对象
-    // n3.initFromJSON("");        // 无法转成 Null 对象
+    // NullSingleton& n2 = NullSingleton::instance();
+    // n2->initFromJSON("abc");     // 无法转成 Null 对象
+    // n2->initFromJSON("");        // 无法转成 Null 对象
 }
 
 // String 类测试，覆盖率 100%
@@ -864,6 +863,19 @@ void JSON5Test(){
     }
 }
 
+void test(){
+    Test test("Test");
+    Value v(1);
+    Value v1(false);
+    Value v2("Hello");
+    EXPECT_INT(test, 2, v.get<int>());
+    EXPECT_TRUE(test, v1.get<bool>());
+    EXPECT_STRING(test, "Hello!", v2.get<string>());
+    EXPECT_INT(test, 1, v.get<int>());
+    EXPECT_FALSE(test, v1.get<bool>());
+    EXPECT_STRING(test, "Hello", v2.get<string>());
+}
+
 void PerformanceTest(){
     Performance pt;
     pt.setScale(100);
@@ -872,12 +884,10 @@ void PerformanceTest(){
     pt.run();
     pt.setScale(10000);
     pt.run();
-    pt.setScale(100000);
-    pt.run();
 }
 
 int main(){
-    // tiny_json_test::Test::show_details_ = true;
+    tiny_json_test::Test::show_details_ = true;
 
     // JSON5 = false;
     // NumberTest();
@@ -898,9 +908,10 @@ int main(){
     // AnnotationTest();
     // JSON5Test();
 
-    // 性能测试
-    JSON5 = false;
-    PerformanceTest();
+    // // 性能测试
+    // JSON5 = false;
+    // PerformanceTest();
+    test();
 
     return 0;
 }
