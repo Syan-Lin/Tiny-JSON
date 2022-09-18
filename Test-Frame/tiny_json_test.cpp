@@ -4,10 +4,12 @@
 #include <regex>
 #include <Windows.h>
 #include "../tiny_json.h"
+#include "tiny_json_performance.h"
 
 using namespace std;
 using namespace tiny_json;
 using namespace tiny_json_test;
+using namespace tiny_json_performance;
 
 // 测试相关宏
 std::string info;
@@ -863,35 +865,42 @@ void JSON5Test(){
 }
 
 void PerformanceTest(){
-    // tiny_json_test::PerformanceTest pt;
-    // pt.run();
+    Performance pt;
+    pt.setScale(100);
+    pt.run();
+    pt.setScale(1000);
+    pt.run();
+    pt.setScale(10000);
+    pt.run();
+    pt.setScale(100000);
+    pt.run();
 }
 
 int main(){
     // tiny_json_test::Test::show_details_ = true;
 
-    JSON5 = false;
-    NumberTest();
-    BooleanTest();
-    StringTest();
-    NullTest();
-    ValueTest();
-    ArrayTest();
-    ObjectTest();
-    RegExTest();
-    FuncTest();
+    // JSON5 = false;
+    // NumberTest();
+    // BooleanTest();
+    // StringTest();
+    // NullTest();
+    // ValueTest();
+    // ArrayTest();
+    // ObjectTest();
+    // RegExTest();
+    // FuncTest();
 
-    // JSON5 测试
-    JSON5 = true;
-    StringJSON5Test();
-    ObjectJSON5Test();
-    ArrayJSON5Test();
-    AnnotationTest();
-    JSON5Test();
+    // // JSON5 测试
+    // JSON5 = true;
+    // StringJSON5Test();
+    // ObjectJSON5Test();
+    // ArrayJSON5Test();
+    // AnnotationTest();
+    // JSON5Test();
 
     // 性能测试
     JSON5 = false;
-    ::PerformanceTest();
+    PerformanceTest();
 
     return 0;
 }
