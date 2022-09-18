@@ -7,9 +7,35 @@
 
 using namespace std;
 using namespace tiny_json;
+using namespace tiny_json_test;
+
+// 测试相关宏
+std::string info;
+#define EXPECT_TRUE(var, condition)             \
+    info = __FILE__;                            \
+    info += " at line: " + to_string(__LINE__); \
+    var.ExpectTrue(condition, info)
+#define EXPECT_FALSE(var, condition)            \
+    info = __FILE__;                            \
+    info += " at line: " + to_string(__LINE__); \
+    var.ExpectFalse(condition, info)
+#define EXPECT_INT(var, target, number)         \
+    info = __FILE__;                            \
+    info += " at line: " + to_string(__LINE__); \
+    var.ExpectInt(target, number, info)
+#define EXPECT_DOUBLE(var, target, number)      \
+    info = __FILE__;                            \
+    info += " at line: " + to_string(__LINE__); \
+    var.ExpectDouble(target, number, info)
+#define EXPECT_STRING(var, target, str)         \
+    info = __FILE__;                            \
+    info += " at line: " + to_string(__LINE__); \
+    var.ExpectString(target, str, info)
 
 // 外部函数测试
 void FuncTest(){
+    Test test("FuncTest");
+
     string json = "{"
         "\"integer\": 1,"
         "\"float\": 1.1,"
@@ -28,9 +54,10 @@ void FuncTest(){
         "}"
         "}";
     Object o4 = parse(json);
-    assert(o4.size() == 6 && parse(o4, false) == "{\"array\": [1, \"string\", false, [\"peter\", \"bob\"], "
+    EXPECT_INT(test, 6, o4.size());
+    EXPECT_STRING(test, "{\"array\": [1, \"string\", false, [\"peter\", \"bob\"], "
     "{\"age\": 16, \"name\": \"[Anna]\"}], \"bool\": true, \"float\": 1.1, \"integer\": 1, "
-    "\"object\": {\"age\": 16, \"name\": \"Anna\"}, \"string\": \"Hello \\\"World!'\"}");
+    "\"object\": {\"age\": 16, \"name\": \"Anna\"}, \"string\": \"Hello \\\"World!'\"}", o4.parse());
 
     // 环测试，由于是复制操作，所以不会产生环
     Object circle;
@@ -40,7 +67,7 @@ void FuncTest(){
     circle.add("arrar", Value(Array({1, 2, circle})));
     circle.add("obj", Value(circle));
     circle.add("str2", Value("ABC"));
-    assert(circle.parse() == "{\"arrar\": [1, 2, {\"str\": \"abc\"}], \"obj\": {\"arrar\": [1, 2, {\"str\": \"abc\"}], \"str\": \"abc\"}, \"str\": \"abc\", \"str2\": \"ABC\"}");
+    EXPECT_STRING(test, "{\"arrar\": [1, 2, {\"str\": \"abc\"}], \"obj\": {\"arrar\": [1, 2, {\"str\": \"abc\"}], \"str\": \"abc\"}, \"str\": \"abc\", \"str2\": \"ABC\"}", circle.parse());
 
     // 读写文件测试
     Object o1;
@@ -54,6 +81,8 @@ void FuncTest(){
 
 // Object 类测试，覆盖率 100%
 void ObjectTest(){
+    Test test("ObjectTest");
+
     // 初始化
     Object o1;
     o1.initFromJSON("{\"number\": 1.1}");   // 字符串初始化
@@ -67,22 +96,31 @@ void ObjectTest(){
             {"hh", true}
         }}
     };
-    assert(o1.size() == 1 && o1.parse() == "{\"number\": 1.1}");
-    assert(o2.size() == 1 && o2.parse() == "{\"number\": 1.1}");
-    assert(o3.size() == 0 && o3.parse() == "{}");
-    assert(o3_.size() == 3 && o3_.parse() == R"({"array": [1, 2, 3], "key": 1432, "obj": {"hh": true, "inside": "obj"}})");
+    EXPECT_INT(test, 1, o1.size());
+    EXPECT_STRING(test, "{\"number\": 1.1}", o1.parse());
+    EXPECT_INT(test, 1, o2.size());
+    EXPECT_STRING(test, "{\"number\": 1.1}", o2.parse());
+    EXPECT_INT(test, 0, o3.size());
+    EXPECT_STRING(test, "{}", o3.parse());
+    EXPECT_INT(test, 3, o3_.size());
+    EXPECT_STRING(test, R"({"array": [1, 2, 3], "key": 1432, "obj": {"hh": true, "inside": "obj"}})", o3_.parse());
 
     // 赋值
     o3 = o1;        // operator=(Object&)
-    assert(o3.size() == 1 && o3.parse() == "{\"number\": 1.1}");
+    EXPECT_INT(test, 1, o3.size());
+    EXPECT_STRING(test, "{\"number\": 1.1}", o3.parse());
     o3 = Object();  // operator=(Object&&)
-    assert(o3.size() == 0 && o3.parse() == "{}");
+    EXPECT_INT(test, 0, o3.size());
+    EXPECT_STRING(test, "{}", o3.parse());
     o1["number"] = 5;
     o3_["array"][2] = o1["number"];
     o3["test"] = o3_["obj"];
-    assert(o1.size() == 1 && o1.parse() == "{\"number\": 5}");
-    assert(o3_.size() == 3 && o3_.parse() == R"({"array": [1, 2, 5], "key": 1432, "obj": {"hh": true, "inside": "obj"}})");
-    assert(o3.size() == 1 && o3.parse() == R"({"test": {"hh": true, "inside": "obj"}})");
+    EXPECT_INT(test, 1, o1.size());
+    EXPECT_STRING(test, "{\"number\": 5}", o1.parse());
+    EXPECT_INT(test, 3, o3_.size());
+    EXPECT_STRING(test, R"({"array": [1, 2, 5], "key": 1432, "obj": {"hh": true, "inside": "obj"}})", o3_.parse());
+    EXPECT_INT(test, 1, o3.size());
+    EXPECT_STRING(test, R"({"test": {"hh": true, "inside": "obj"}})", o3.parse());
 
     // 功能测试
     o3.clear();
@@ -91,12 +129,12 @@ void ObjectTest(){
     o3["number"] = 5.2;
     if(o3.has("number")){
         double v = o3["number"].get<double>();
-        assert(v == 5.2);
+        EXPECT_DOUBLE(test, 5.2, v);
     }
     o3.remove("number");
-    assert(o3.parse() == "{\"bool\": false, \"string\": \"abc\"}");
+    EXPECT_STRING(test, "{\"bool\": false, \"string\": \"abc\"}", o3.parse());
     o3.clear();
-    assert(o3.parse() == "{}");
+    EXPECT_STRING(test, "{}", o3.parse());
 
     string json = "{"
         "\"integer\": 1,"
@@ -117,18 +155,21 @@ void ObjectTest(){
         "}";
     Object o4;
     o4.initFromJSON(json);
-    assert(o4.size() == 6 && o4.parse() == "{\"array\": [1, \"string\", false, [\"peter\", \"bob\"], "
+    EXPECT_INT(test, 6, o4.size());
+    EXPECT_STRING(test, "{\"array\": [1, \"string\", false, [\"peter\", \"bob\"], "
     "{\"age\": 16, \"name\": \"[Anna]\"}], \"bool\": true, \"float\": 1.1, \"integer\": 1, "
-    "\"object\": {\"age\": 16, \"name\": \"Anna\"}, \"string\": \"Hello \\\"World!'\"}");
+    "\"object\": {\"age\": 16, \"name\": \"Anna\"}, \"string\": \"Hello \\\"World!'\"}", o4.parse());
 
     // 错误测试
-    o4.remove("hhh");
-    o4.add("integer", 6.6);         // key 已存在，覆盖
-    o4["abcdfg"].get<string>();       // 严重错误，行为未定义
+    // o4.remove("hhh");
+    // o4.add("integer", 6.6);         // key 已存在，覆盖
+    // o4["abcdfg"].get<string>();       // 严重错误，行为未定义
 }
 
 // Array 类测试，覆盖率 100%
 void ArrayTest(){
+    Test test("ArrayTest");
+
     // 初始化
     Array a1;
     Array a2({3.14, false, Value(), "abc"});                // Array(initializer_list)
@@ -137,19 +178,27 @@ void ArrayTest(){
     Array a5, a5_;                                          // 字符串初始化
     a5.initFromJSON("[3.14,false,null,\"qwe\"]");
     a5_.initFromJSON("[3.14]");
-    assert(a1.size() == 0 && a1.parse() == "[]");
-    assert(a2.size() == 4 && a2.parse() == "[3.14, false, null, \"abc\"]");
-    assert(a3.size() == 4 && a3.parse() == "[3.14, false, null, \"abc\"]");
-    assert(a4.size() == 3 && a4.parse() == "[1, 2, 3]");
-    assert(a5.size() == 4 && a5.parse() == "[3.14, false, null, \"qwe\"]");
-    assert(a5_.size() == 1 && a5_.parse() == "[3.14]");
+    EXPECT_INT(test, 0, a1.size());
+    EXPECT_STRING(test, "[]", a1.parse());
+    EXPECT_INT(test, 4, a2.size());
+    EXPECT_STRING(test, "[3.14, false, null, \"abc\"]", a2.parse());
+    EXPECT_INT(test, 4, a3.size());
+    EXPECT_STRING(test, "[3.14, false, null, \"abc\"]", a3.parse());
+    EXPECT_INT(test, 3, a4.size());
+    EXPECT_STRING(test, "[1, 2, 3]", a4.parse());
+    EXPECT_INT(test, 4, a5.size());
+    EXPECT_STRING(test, "[3.14, false, null, \"qwe\"]", a5.parse());
+    EXPECT_INT(test, 1, a5_.size());
+    EXPECT_STRING(test, "[3.14]", a5_.parse());
 
     // 赋值
     Array a6, a7;
     a6 = a2;                    // operator=(Array&)
     a7 = Array({1, 2, 3});      // operator=(Array&&)
-    assert(a6.size() == 4 && a6.parse() == "[3.14, false, null, \"abc\"]");
-    assert(a7.size() == 3 && a7.parse() == "[1, 2, 3]");
+    EXPECT_INT(test, 4, a6.size());
+    EXPECT_STRING(test, "[3.14, false, null, \"abc\"]", a6.parse());
+    EXPECT_INT(test, 3, a7.size());
+    EXPECT_STRING(test, "[1, 2, 3]", a7.parse());
 
     // 功能测试
     a7[0] = 6.28;
@@ -160,49 +209,57 @@ void ArrayTest(){
     a7.append(3.14);
     a7.append(3);
     a7.append(Null());
-    assert(a7.size() == 9 && a7.parse() == "[6.28, true, 3, 5, \"hello\", false, 3.14, 3, null]");
+    EXPECT_INT(test, 9, a7.size());
+    EXPECT_STRING(test, "[6.28, true, 3, 5, \"hello\", false, 3.14, 3, null]", a7.parse());
     a7.clear();
-    assert(a7.size() == 0 && a7.parse() == "[]");
+    EXPECT_INT(test, 0, a7.size());
+    EXPECT_STRING(test, "[]", a7.parse());
     a7.add(0, Null());
     a7.add(1, Value(false));
     a7.add(2, "abc");
     a7.add(2, true);
     a7.add(4, 4);
     a7.add(5, 6.3);
-    assert(a7.size() == 6 && a7.parse() == "[null, false, true, \"abc\", 4, 6.3]");
+    EXPECT_INT(test, 6, a7.size());
+    EXPECT_STRING(test, "[null, false, true, \"abc\", 4, 6.3]", a7.parse());
     a7[1] = Null();
     a7[0] = 1;
     a7[2] = 1.1;
     a7[3] = true;
     a7[4] = "hello";
     a7[5] = Value();
-    assert(a7.size() == 6 && a7.parse() == "[1, null, 1.1, true, \"hello\", null]");
+    EXPECT_INT(test, 6, a7.size());
+    EXPECT_STRING(test, "[1, null, 1.1, true, \"hello\", null]", a7.parse());
     a7.del(0);
     a7.del(1);
     a7.pop();
-    assert(a7.size() == 3 && a7.parse() == "[null, true, \"hello\"]");
+    EXPECT_INT(test, 3, a7.size());
+    EXPECT_STRING(test, "[null, true, \"hello\"]", a7.parse());
 
     // 嵌套测试
     Array t;
     t.initFromJSON("[1, {\"num\": 2}, 3, [1, [\"abc\", {\"a\": \"ggg\"}], 3]]");
-    assert(t.size() == 4 && t.parse() == "[1, {\"num\": 2}, 3, [1, [\"abc\", {\"a\": \"ggg\"}], 3]]");
+    EXPECT_INT(test, 4, t.size());
+    EXPECT_STRING(test, "[1, {\"num\": 2}, 3, [1, [\"abc\", {\"a\": \"ggg\"}], 3]]", t.parse());
 
     // 错误测试
-    Array e;
+    // Array e;
     // 数组越界
     // e.pop();
     // e.del(1);
     // e.set(2, 4);
     // e[5] = 6;
-    e.initFromJSON("错误字符串，无法初始化");
-    e.initFromJSON("['asd\", 2, null]");        // 引号不成对
-    e.initFromJSON("{\"asd\", 2, null]");       // 括号错误
-    e.initFromJSON("[\"asd\", [}, 2, null]");   // 内部括号错误
-    e.initFromJSON("");
+    // e.initFromJSON("错误字符串，无法初始化");
+    // e.initFromJSON("['asd\", 2, null]");        // 引号不成对
+    // e.initFromJSON("{\"asd\", 2, null]");       // 括号错误
+    // e.initFromJSON("[\"asd\", [}, 2, null]");   // 内部括号错误
+    // e.initFromJSON("");
 }
 
 // Value 类测试，覆盖率 100%
 void ValueTest(){
+    Test test("ValueTest");
+
     // 初始化
     Value v1;                       // 默认为 null
     Value v2(3.14);                 // Value(double)
@@ -223,19 +280,32 @@ void ValueTest(){
     Value v7(v2);                   // Value(Value&) 等价于 Value v8 = v2
     Value v8(move(Value(true)));    // Value(Value&&) 等价于 Value v7 = Value(true)
     Value v9 = Null();
-    assert(v1.getType() == Type::kNull && v1.parse() == "null");
-    assert(v2.getType() == Type::kNumber && v2.parse() == "3.14");
-    assert(v2_.getType() == Type::kNumber && v2_.parse() == "3");
-    assert(v3.getType() == Type::kBoolean && v3.parse() == "true");
-    assert(v4.getType() == Type::kString && v4.parse() == "\"abc\"");
-    assert(v4_str.getType() == Type::kString && v4_str.parse() == "\"abc\"");
-    assert(v5.getType() == Type::kArray && v5.parse() == "[1, 2, 3, false, \"123\"]");
-    assert(v5_.getType() == Type::kArray && v5_.parse() == "[1, 2, 3, false, \"123\"]");
-    assert(v6.getType() == Type::kObject && v6.parse() == "{\"num\": 1}");
-    assert(v6_.getType() == Type::kObject && v6_.parse() == "{\"num\": 2.2}");
-    assert(v7.getType() == Type::kNumber && v7.parse() == "3.14");
-    assert(v8.getType() == Type::kBoolean && v8.parse() == "true");
-    assert(v9.getType() == Type::kNull && v9.parse() == "null");
+    EXPECT_TRUE(test, v1.getType() == Type::kNull);
+    EXPECT_STRING(test, "null", v1.parse());
+    EXPECT_TRUE(test, v2.getType() == Type::kNumber);
+    EXPECT_STRING(test, "3.14", v2.parse());
+    EXPECT_TRUE(test, v2_.getType() == Type::kNumber);
+    EXPECT_STRING(test, "3", v2_.parse());
+    EXPECT_TRUE(test, v3.getType() == Type::kBoolean);
+    EXPECT_STRING(test, "true", v3.parse());
+    EXPECT_TRUE(test, v4.getType() == Type::kString);
+    EXPECT_STRING(test, "\"abc\"", v4.parse());
+    EXPECT_TRUE(test, v4_str.getType() == Type::kString);
+    EXPECT_STRING(test, "\"abc\"", v4_str.parse());
+    EXPECT_TRUE(test, v5.getType() == Type::kArray);
+    EXPECT_STRING(test, "[1, 2, 3, false, \"123\"]", v5.parse());
+    EXPECT_TRUE(test, v5_.getType() == Type::kArray);
+    EXPECT_STRING(test, "[1, 2, 3, false, \"123\"]", v5_.parse());
+    EXPECT_TRUE(test, v6.getType() == Type::kObject);
+    EXPECT_STRING(test, "{\"num\": 1}", v6.parse());
+    EXPECT_TRUE(test, v6_.getType() == Type::kObject);
+    EXPECT_STRING(test, "{\"num\": 2.2}", v6_.parse());
+    EXPECT_TRUE(test, v7.getType() == Type::kNumber);
+    EXPECT_STRING(test, "3.14", v7.parse());
+    EXPECT_TRUE(test, v8.getType() == Type::kBoolean);
+    EXPECT_STRING(test, "true", v8.parse());
+    EXPECT_TRUE(test, v9.getType() == Type::kNull);
+    EXPECT_STRING(test, "null", v9.parse());
 
     // 移动语义测试
     Value m1(move(Value(2.2)));
@@ -243,11 +313,16 @@ void ValueTest(){
     Value m3(move(Value()));
     Value m4(move(Value(Object())));
     Value m5(move(Value(Array({1, 2, 3}))));
-    assert(m1.getType() == Type::kNumber && m1.parse() == "2.2");
-    assert(m2.getType() == Type::kString && m2.parse() == "\"2.2\"");
-    assert(m3.getType() == Type::kNull && m3.parse() == "null");
-    assert(m4.getType() == Type::kObject && m4.parse() == "{}");
-    assert(m5.getType() == Type::kArray && m5.parse() == "[1, 2, 3]");
+    EXPECT_TRUE(test, m1.getType() == Type::kNumber);
+    EXPECT_STRING(test, "2.2", m1.parse());
+    EXPECT_TRUE(test, m2.getType() == Type::kString);
+    EXPECT_STRING(test, "\"2.2\"", m2.parse());
+    EXPECT_TRUE(test, m3.getType() == Type::kNull);
+    EXPECT_STRING(test, "null", m3.parse());
+    EXPECT_TRUE(test, m4.getType() == Type::kObject);
+    EXPECT_STRING(test, "{}", m4.parse());
+    EXPECT_TRUE(test, m5.getType() == Type::kArray);
+    EXPECT_STRING(test, "[1, 2, 3]", m5.parse());
 
     // 字符串初始化
     Value s1, s2, s3, s4, s5, s6, s7;
@@ -258,13 +333,20 @@ void ValueTest(){
     s4.initFromJSON("\"abc\"");     // 初始化为 String 类型
     s5.initFromJSON("[1, 2, 3]");   // 初始化为 Array 类型
     s7.initFromJSON("{\"num\": 2.2}");// 初始化为 Object 类型
-    assert(s1.getType() == Type::kNumber && s1.parse() == "3.14");
-    assert(s2.getType() == Type::kBoolean && s2.parse() == "true");
-    assert(s3.getType() == Type::kNull && s3.parse() == "null");
-    assert(s4.getType() == Type::kString && s4.parse() == "\"abc\"");
-    assert(s5.getType() == Type::kArray && s5.parse() == "[1, 2, 3]");
-    assert(s6.getType() == Type::kNumber && s6.parse() == "0x123");
-    assert(s7.getType() == Type::kObject && s7.parse() == "{\"num\": 2.2}");
+    EXPECT_TRUE(test, s1.getType() == Type::kNumber);
+    EXPECT_STRING(test, "3.14", s1.parse());
+    EXPECT_TRUE(test, s2.getType() == Type::kBoolean);
+    EXPECT_STRING(test, "true", s2.parse());
+    EXPECT_TRUE(test, s3.getType() == Type::kNull);
+    EXPECT_STRING(test, "null", s3.parse());
+    EXPECT_TRUE(test, s4.getType() == Type::kString);
+    EXPECT_STRING(test, "\"abc\"", s4.parse());
+    EXPECT_TRUE(test, s5.getType() == Type::kArray);
+    EXPECT_STRING(test, "[1, 2, 3]", s5.parse());
+    EXPECT_TRUE(test, s6.getType() == Type::kNumber);
+    EXPECT_STRING(test, "0x123", s6.parse());
+    EXPECT_TRUE(test, s7.getType() == Type::kObject);
+    EXPECT_STRING(test, "{\"num\": 2.2}", s7.parse());
 
     // 赋值
     s1 = 5.68;      // operator=(double)
@@ -273,12 +355,19 @@ void ValueTest(){
     s3 = "abc";     // operator=(char[]) -> operator=(string&)
     s4 = v8;        // operator=(Value&)
     s5 = Value();   // operator=(Value&&)
-    assert(s1.getType() == Type::kNumber && s1.parse() == "5.68");
-    assert(s2.getType() == Type::kBoolean && s2.parse() == "false");
-    assert(s3.getType() == Type::kString && s3.parse() == "\"abc\"");
-    assert(s4.getType() == Type::kBoolean && s4.parse() == "true");
-    assert(s5.getType() == Type::kNull && s5.parse() == "null");
-    assert(s6.getType() == Type::kNumber && s6.parse() == "0x5");
+    EXPECT_TRUE(test, s1.getType() == Type::kNumber);
+    EXPECT_STRING(test, "5.68", s1.parse());
+    EXPECT_TRUE(test, s2.getType() == Type::kBoolean);
+    EXPECT_STRING(test, "false", s2.parse());
+    EXPECT_TRUE(test, s3.getType() == Type::kString);
+    EXPECT_STRING(test, "\"abc\"", s3.parse());
+    EXPECT_TRUE(test, s4.getType() == Type::kBoolean);
+    EXPECT_STRING(test, "true", s4.parse());
+    EXPECT_TRUE(test, s5.getType() == Type::kNull);
+    EXPECT_STRING(test, "null", s5.parse());
+    EXPECT_TRUE(test, s6.getType() == Type::kNumber);
+    EXPECT_STRING(test, "0x5", s6.parse());
+
     Value t1, t2, t3, t4, t5, t6;
     t1 = Object({{"hello", 123}});
     t2 = Array({1, 2, 3});
@@ -286,117 +375,139 @@ void ValueTest(){
     t4 = Null();
     t5 = true;
     t6 = "10";
-    assert(t1.getType() == Type::kObject && t1.parse() == "{\"hello\": 123}");
-    assert(t2.getType() == Type::kArray && t2.parse() == "[1, 2, 3]");
-    assert(t3.getType() == Type::kNumber && t3.parse() == "1");
-    assert(t4.getType() == Type::kNull && t4.parse() == "null");
-    assert(t5.getType() == Type::kBoolean && t5.parse() == "true");
-    assert(t6.getType() == Type::kString && t6.parse() == "\"10\"");
+    EXPECT_TRUE(test, t1.getType() == Type::kObject);
+    EXPECT_STRING(test, "{\"hello\": 123}", t1.parse());
+    EXPECT_TRUE(test, t2.getType() == Type::kArray);
+    EXPECT_STRING(test, "[1, 2, 3]", t2.parse());
+    EXPECT_TRUE(test, t3.getType() == Type::kNumber);
+    EXPECT_STRING(test, "1", t3.parse());
+    EXPECT_TRUE(test, t4.getType() == Type::kNull);
+    EXPECT_STRING(test, "null", t4.parse());
+    EXPECT_TRUE(test, t5.getType() == Type::kBoolean);
+    EXPECT_STRING(test, "true", t5.parse());
+    EXPECT_TRUE(test, t6.getType() == Type::kString);
+    EXPECT_STRING(test, "\"10\"", t6.parse());
 
     // 功能测试
-    assert(t1.get<Object>().parse() == "{\"hello\": 123}");
-    assert(t2.get<Array>().parse() == "[1, 2, 3]");
-    assert(t3.get<int>() == 1);
-    assert(t3.getNumber().getType() == NumberType::kInteger);
-    assert(t4.get<Null>().parse() == "null");
-    assert(t5.get<bool>() == true);
-    assert(t6.get<string>() == "10");
+    EXPECT_STRING(test, "{\"hello\": 123}", t1.get<Object>().parse());
+    EXPECT_INT(test, 123, t1["hello"].get<int>());
+    EXPECT_STRING(test, "[1, 2, 3]", t2.get<Array>().parse());
+    EXPECT_INT(test, 1, t2[0].get<int>());
+    EXPECT_INT(test, 1, t3.get<int>());
+    EXPECT_TRUE(test, t3.getNumber().getType() == NumberType::kInteger);
+    EXPECT_STRING(test, "null", t4.get<Null>().parse());
+    EXPECT_TRUE(test, t5.get<bool>());
+    EXPECT_STRING(test, "10", t6.get<string>());
     v2 = 6.15;
     v3 = false;
     v4 = "ABC";
-    assert(v2.getType() == Type::kNumber && v2.parse() == "6.15");
-    assert(v3.getType() == Type::kBoolean && v3.parse() == "false");
-    assert(v4.getType() == Type::kString && v4.parse() == "\"ABC\"");
+    EXPECT_TRUE(test, v2.getType() == Type::kNumber);
+    EXPECT_STRING(test, "6.15", v2.parse());
+    EXPECT_TRUE(test, v3.getType() == Type::kBoolean);
+    EXPECT_STRING(test, "false", v3.parse());
+    EXPECT_TRUE(test, v4.getType() == Type::kString);
+    EXPECT_STRING(test, "\"ABC\"", v4.parse());
     v2.reset();
-    assert(v2.getType() == Type::kNull && v2.parse() == "null");
+    EXPECT_TRUE(test, v2.getType() == Type::kNull);
+    EXPECT_STRING(test, "null", v2.parse());
     v1 = true;
     v2 = "abc";      // set(char[]) -> set(string&)
     v3 = 2;
     v4 = 3.5;
-    assert(v4.getType() == Type::kNumber && v4.parse() == "3.5");
-    assert(v3.getType() == Type::kNumber && v3.parse() == "2");
-    assert(v1.getType() == Type::kBoolean && v1.parse() == "true");
-    assert(v2.getType() == Type::kString && v2.parse() == "\"abc\"");
+    EXPECT_TRUE(test, v2.getType() == Type::kString);
+    EXPECT_STRING(test, "\"abc\"", v2.parse());
+    EXPECT_TRUE(test, v3.getType() == Type::kNumber);
+    EXPECT_STRING(test, "2", v3.parse());
+    EXPECT_TRUE(test, v4.getType() == Type::kNumber);
+    EXPECT_STRING(test, "3.5", v4.parse());
+    EXPECT_TRUE(test, v1.getType() == Type::kBoolean);
+    EXPECT_STRING(test, "true", v1.parse());
     v7 = Object();
     v8 = Array({1, 2 ,3});
-    assert(v7.getType() == Type::kObject && v7.parse() == "{}");
-    assert(v8.getType() == Type::kArray && v8.parse() == "[1, 2, 3]");
+    EXPECT_TRUE(test, v7.getType() == Type::kObject);
+    EXPECT_STRING(test, "{}", v7.parse());
+    EXPECT_TRUE(test, v8.getType() == Type::kArray);
+    EXPECT_STRING(test, "[1, 2, 3]", v8.parse());
 
     // 错误测试
     // static_cast<Boolean&>(v2.get()).set(false);     // 类型错误，行为未定义，在使用之前请检查类型!
-    Value e;
-    e.initFromJSON("qwe");      // 无法转化为任何类型
-    e.initFromJSON("");         // 无法转化为任何类型
+    // Value e;
+    // e.initFromJSON("qwe");      // 无法转化为任何类型
+    // e.initFromJSON("");         // 无法转化为任何类型
 }
 
 // 正则表达式测试
 void RegExTest(){
+    Test test("RegExTest");
+
     using namespace reg_ex;
     // Number 对象
     // 实数正则式
-    assert(regex_match("1", kPatternNumber));
-    assert(regex_match("1.1", kPatternNumber));
-    assert(regex_match(".1", kPatternNumber));
-    assert(regex_match("0.1", kPatternNumber));
-    assert(regex_match("1.1e2", kPatternNumber));
-    assert(regex_match("1.1e+2", kPatternNumber));
-    assert(regex_match("1.1e-2", kPatternNumber));
-    assert(regex_match("+1", kPatternNumber));
-    assert(regex_match("+1.1", kPatternNumber));
-    assert(regex_match("+.1", kPatternNumber));
-    assert(regex_match("+0.1", kPatternNumber));
-    assert(regex_match("+1.1e2", kPatternNumber));
-    assert(regex_match("+1.1e+2", kPatternNumber));
-    assert(regex_match("+1.1e-2", kPatternNumber));
-    assert(regex_match("-1", kPatternNumber));
-    assert(regex_match("-1.1", kPatternNumber));
-    assert(regex_match("-.1", kPatternNumber));
-    assert(regex_match("-0.1", kPatternNumber));
-    assert(regex_match("-1.1e2", kPatternNumber));
-    assert(regex_match("-1.1e+2", kPatternNumber));
-    assert(regex_match("-1.1e-2", kPatternNumber));
+    EXPECT_TRUE(test, regex_match("1", kPatternNumber));
+    EXPECT_TRUE(test, regex_match("1.1", kPatternNumber));
+    EXPECT_TRUE(test, regex_match(".1", kPatternNumber));
+    EXPECT_TRUE(test, regex_match("0.1", kPatternNumber));
+    EXPECT_TRUE(test, regex_match("1.1e2", kPatternNumber));
+    EXPECT_TRUE(test, regex_match("1.1e+2", kPatternNumber));
+    EXPECT_TRUE(test, regex_match("1.1e-2", kPatternNumber));
+    EXPECT_TRUE(test, regex_match("+1", kPatternNumber));
+    EXPECT_TRUE(test, regex_match("+1.1", kPatternNumber));
+    EXPECT_TRUE(test, regex_match("+.1", kPatternNumber));
+    EXPECT_TRUE(test, regex_match("+0.1", kPatternNumber));
+    EXPECT_TRUE(test, regex_match("+1.1e2", kPatternNumber));
+    EXPECT_TRUE(test, regex_match("+1.1e+2", kPatternNumber));
+    EXPECT_TRUE(test, regex_match("+1.1e-2", kPatternNumber));
+    EXPECT_TRUE(test, regex_match("-1", kPatternNumber));
+    EXPECT_TRUE(test, regex_match("-1.1", kPatternNumber));
+    EXPECT_TRUE(test, regex_match("-.1", kPatternNumber));
+    EXPECT_TRUE(test, regex_match("-0.1", kPatternNumber));
+    EXPECT_TRUE(test, regex_match("-1.1e2", kPatternNumber));
+    EXPECT_TRUE(test, regex_match("-1.1e+2", kPatternNumber));
+    EXPECT_TRUE(test, regex_match("-1.1e-2", kPatternNumber));
     // 十六进制正则式
-    assert(regex_match("0xabcdef123", kPatternHex));
-    assert(regex_match("0Xabcdef123", kPatternHex));
-    assert(regex_match("0xABCDEF123", kPatternHex));
-    assert(!regex_match("123456789", kPatternHex));
-    assert(regex_match("abcdef123", kPatternHex));
-    assert(regex_match("ABCDEF123", kPatternHex));
+    EXPECT_TRUE(test, regex_match("0xabcdef123", kPatternHex));
+    EXPECT_TRUE(test, regex_match("0Xabcdef123", kPatternHex));
+    EXPECT_TRUE(test, regex_match("0xABCDEF123", kPatternHex));
+    EXPECT_FALSE(test, regex_match("123456789", kPatternHex));
+    EXPECT_TRUE(test, regex_match("abcdef123", kPatternHex));
+    EXPECT_TRUE(test, regex_match("ABCDEF123", kPatternHex));
 
     // String 对象 '...' 模式或 "..." 模式
-    assert(regex_match("\"0xabcdef123\"", kPatternString));
-    assert(regex_match("\"中文字符test\n\t\\\"", kPatternString));
-    assert(regex_match("\"中文字符测试\"", kPatternString));
-    assert(regex_match("\"This is a test \t !!!\"", kPatternString));
-    assert(regex_match("\"\u235afasd\"", kPatternString));
-    assert(regex_match("\'0xabcdef123\'", kPatternString));
-    assert(regex_match("\'中文字符test\n\t\\\'", kPatternString));
-    assert(regex_match("\'中文字符测试\'", kPatternString));
-    assert(regex_match("\'This is a test \t !!!\'", kPatternString));
-    assert(regex_match("\'\u235aunicode\'", kPatternString));
+    EXPECT_TRUE(test, regex_match("\"0xabcdef123\"", kPatternString));
+    EXPECT_TRUE(test, regex_match("\"中文字符test\n\t\\\"", kPatternString));
+    EXPECT_TRUE(test, regex_match("\"中文字符测试\"", kPatternString));
+    EXPECT_TRUE(test, regex_match("\"This is a test \t !!!\"", kPatternString));
+    EXPECT_TRUE(test, regex_match("\"\u235afasd\"", kPatternString));
+    EXPECT_TRUE(test, regex_match("\'0xabcdef123\'", kPatternString));
+    EXPECT_TRUE(test, regex_match("\'中文字符test\n\t\\\'", kPatternString));
+    EXPECT_TRUE(test, regex_match("\'中文字符测试\'", kPatternString));
+    EXPECT_TRUE(test, regex_match("\'This is a test \t !!!\'", kPatternString));
+    EXPECT_TRUE(test, regex_match("\'\u235aunicode\'", kPatternString));
 
     // Boolean 对象
-    assert(regex_match("true", kPatternBool));
-    assert(regex_match("false", kPatternBool));
-    assert(!regex_match("True", kPatternBool));
-    assert(!regex_match("False", kPatternBool));
+    EXPECT_TRUE(test, regex_match("true", kPatternBool));
+    EXPECT_TRUE(test, regex_match("false", kPatternBool));
+    EXPECT_FALSE(test, regex_match("True", kPatternBool));
+    EXPECT_FALSE(test, regex_match("False", kPatternBool));
 
     // Null 对象
-    assert(regex_match("null", kPatternNull));
-    assert(!regex_match("Null", kPatternNull));
+    EXPECT_TRUE(test, regex_match("null", kPatternNull));
+    EXPECT_FALSE(test, regex_match("Null", kPatternNull));
 
     // Array 对象 [...] 模式
-    assert(regex_match("[1,2,4521,\"Test\nTest\",]", kPatternArray));
+    EXPECT_TRUE(test, regex_match("[1,2,4521,\"Test\nTest\",]", kPatternArray));
 
     // Object 对象 ..:.. 模式
-    assert(regex_match("key: \"value\"", kPatternObj));
-    assert(regex_match("\"key\": \'value\'", kPatternObj));
-    assert(regex_match("key123_=+: \"value123_=\"", kPatternObj));
-    assert(regex_match("\"key123_=+\": 1.234e-5", kPatternObj));
+    EXPECT_TRUE(test, regex_match("key: \"value\"", kPatternObj));
+    EXPECT_TRUE(test, regex_match("\"key\": \'value\'", kPatternObj));
+    EXPECT_TRUE(test, regex_match("key123_=+: \"value123_=\"", kPatternObj));
+    EXPECT_TRUE(test, regex_match("\"key123_=+\": 1.234e-5", kPatternObj));
 }
 
 // Number 类测试，覆盖率 100%
 void NumberTest(){
+    Test test("NumberTest");
+
     // 初始化
     double d = 3.14;
     double i = 3;
@@ -407,37 +518,69 @@ void NumberTest(){
     Number n6(3);                   // Number(int)
     n4.initFromJSON("0xabc123");    // 字符串初始化
     n5.initFromJSON("abc123");      // 字符串初始化
-    assert(n1.getDouble() == 0 && n1.parse() == "0" && n1.getType() == NumberType::kDefault);
-    assert(n2.getDouble() == 3.14 && n2.parse() == "3.14" && n2.getType() == NumberType::kDefault);
-    assert(n2_.getInt() == 3 && n2_.parse() == "3" && n2_.getType() == NumberType::kInteger);
-    assert(n4.getInt() == 11256099 && n4.parse() == "0xabc123" && n4.getType() == NumberType::kHex);
-    assert(n5.getInt() == 11256099 && n5.parse() == "0xabc123" && n5.getType() == NumberType::kHex);
-    assert(n6.getInt() == 3 && n6.parse() == "3" && n6.getType() == NumberType::kInteger);
+    EXPECT_TRUE(test, n1.getType() == NumberType::kDefault);
+    EXPECT_DOUBLE(test, 0, n1.getDouble());
+    EXPECT_STRING(test, "0", n1.parse());
+    EXPECT_TRUE(test, n2.getType() == NumberType::kDefault);
+    EXPECT_DOUBLE(test, 3.14, n2.getDouble());
+    EXPECT_STRING(test, "3.14", n2.parse());
+    EXPECT_TRUE(test, n2_.getType() == NumberType::kInteger);
+    EXPECT_INT(test, 3, n2_.getInt());
+    EXPECT_STRING(test, "3", n2_.parse());
+    EXPECT_TRUE(test, n4.getType() == NumberType::kHex);
+    EXPECT_INT(test, 11256099, n4.getInt());
+    EXPECT_STRING(test, "0xabc123", n4.parse());
+    EXPECT_TRUE(test, n5.getType() == NumberType::kHex);
+    EXPECT_INT(test, 11256099, n5.getInt());
+    EXPECT_STRING(test, "0xabc123", n5.parse());
+    EXPECT_TRUE(test, n6.getType() == NumberType::kInteger);
+    EXPECT_INT(test, 3, n6.getInt());
+    EXPECT_STRING(test, "3", n6.parse());
 
     // 赋值
     Number n7, n8;
     n7 = 3.14;                     // operator=(double)
     n8 = 3;                        // operator=(int)
-    assert(n7.getDouble() == 3.14 && n7.parse() == "3.14" && n7.getType() == NumberType::kDefault);
-    assert(n8.getInt() == 3 && n8.parse() == "3" && n8.getType() == NumberType::kInteger);
+    EXPECT_TRUE(test, n7.getType() == NumberType::kDefault);
+    EXPECT_DOUBLE(test, 3.14, n7.getDouble());
+    EXPECT_STRING(test, "3.14", n7.parse());
+    EXPECT_TRUE(test, n8.getType() == NumberType::kInteger);
+    EXPECT_INT(test, 3, n8.getInt());
+    EXPECT_STRING(test, "3", n8.parse());
 
     // 功能测试
     n1 = 3.14159245622134131;
-    assert(n1.getDouble() == 3.14159245622134131 && n1.parse() == "3.14159" && n1.getType() == NumberType::kDefault);
+    EXPECT_TRUE(test, n1.getType() == NumberType::kDefault);
+    EXPECT_DOUBLE(test, 3.14159245622134131, n1.getDouble());
+    EXPECT_STRING(test, "3.14159", n1.parse());
     n1.parseSetting(NumberType::kFloat, 18);
-    assert(n1.getDouble() == 3.14159245622134131 && n1.parse() == "3.14159245622134131" && n1.getType() == NumberType::kFloat);
+    EXPECT_TRUE(test, n1.getType() == NumberType::kFloat);
+    EXPECT_DOUBLE(test, 3.14159245622134131, n1.getDouble());
+    EXPECT_STRING(test, "3.14159245622134131", n1.parse());
     n2 = 1234567890;
-    assert(n2.getInt() == 1234567890 && n2.parse() == "1234567890" && n2.getType() == NumberType::kInteger);
+    EXPECT_TRUE(test, n2.getType() == NumberType::kInteger);
+    EXPECT_INT(test, 1234567890, n2.getInt());
+    EXPECT_STRING(test, "1234567890", n2.parse());
     n4.parseSetting(NumberType::kInteger);
-    assert(n4.getInt() == 11256099 && n4.parse() == "11256099" && n4.getType() == NumberType::kInteger);
+    EXPECT_TRUE(test, n4.getType() == NumberType::kInteger);
+    EXPECT_INT(test, 11256099, n4.getInt());
+    EXPECT_STRING(test, "11256099", n4.parse());
     n1 = 5;      // kFloat -> kInteger
     n2 = 5;      // kDefault -> kInteger
     n5 = 3.14;   // kHex -> kDefault
     n4 = 3.14;   // kInteger -> kDefault
-    assert(n1.getInt() == 5 && n1.parse() == "5" && n1.getType() == NumberType::kInteger);
-    assert(n2.getInt() == 5 && n1.parse() == "5" && n2.getType() == NumberType::kInteger);
-    assert(n5.getDouble() == 3.14 && n5.parse() == "3.14" && n5.getType() == NumberType::kDefault);
-    assert(n4.getDouble() == 3.14 && n4.parse() == "3.14" && n4.getType() == NumberType::kDefault);
+    EXPECT_TRUE(test, n1.getType() == NumberType::kInteger);
+    EXPECT_INT(test, 5, n1.getInt());
+    EXPECT_STRING(test, "5", n1.parse());
+    EXPECT_TRUE(test, n2.getType() == NumberType::kInteger);
+    EXPECT_INT(test, 5, n2.getInt());
+    EXPECT_STRING(test, "5", n2.parse());
+    EXPECT_TRUE(test, n5.getType() == NumberType::kDefault);
+    EXPECT_DOUBLE(test, 3.14, n5.getDouble());
+    EXPECT_STRING(test, "3.14", n5.parse());
+    EXPECT_TRUE(test, n4.getType() == NumberType::kDefault);
+    EXPECT_DOUBLE(test, 3.14, n4.getDouble());
+    EXPECT_STRING(test, "3.14", n4.parse());
 
     // 数字格式
     {
@@ -448,12 +591,24 @@ void NumberTest(){
         s4.initFromJSON("1.");
         s5.initFromJSON("0xa");
         s6.initFromJSON("1.1e2");
-        assert(s1.getInt() == 1 && s1.parse() == "1" && s1.getType() == NumberType::kInteger);
-        assert(s2.getDouble() == 1.1 && s2.parse() == "1.1" && s2.getType() == NumberType::kDefault);
-        assert(s3.getDouble() == 0.1 && s3.parse() == "0.1" && s3.getType() == NumberType::kDefault);
-        assert(s4.getInt() == 1 && s4.parse() == "1" && s4.getType() == NumberType::kInteger);
-        assert(s5.getInt() == 10 && s5.parse() == "0xa" && s5.getType() == NumberType::kHex);
-        assert(s6.getInt() == 110 && s6.parse() == "110" && s6.getType() == NumberType::kInteger);
+        EXPECT_TRUE(test, s1.getType() == NumberType::kDefault);
+        EXPECT_INT(test, 1, s1.getInt());
+        EXPECT_STRING(test, "1", s1.parse());
+        EXPECT_TRUE(test, s2.getType() == NumberType::kDefault);
+        EXPECT_DOUBLE(test, 1.1, s2.getDouble());
+        EXPECT_STRING(test, "1.1", s2.parse());
+        EXPECT_TRUE(test, s3.getType() == NumberType::kDefault);
+        EXPECT_DOUBLE(test, 0.1, s3.getDouble());
+        EXPECT_STRING(test, "0.1", s3.parse());
+        EXPECT_TRUE(test, s4.getType() == NumberType::kDefault);
+        EXPECT_INT(test, 1, s4.getInt());
+        EXPECT_STRING(test, "1", s4.parse());
+        EXPECT_TRUE(test, s5.getType() == NumberType::kHex);
+        EXPECT_INT(test, 10, s5.getInt());
+        EXPECT_STRING(test, "0xa", s5.parse());
+        EXPECT_TRUE(test, s6.getType() == NumberType::kDefault);
+        EXPECT_INT(test, 110, s6.getInt());
+        EXPECT_STRING(test, "110", s6.parse());
     }
     {
         Number s1, s2, s3, s4, s5, s6;
@@ -463,43 +618,59 @@ void NumberTest(){
         s4.initFromJSON("-1.");
         s5.initFromJSON("-0xa");
         s6.initFromJSON("-1.1e2");
-        assert(s1.getInt() == -1 && s1.parse() == "-1" && s1.getType() == NumberType::kInteger);
-        assert(s2.getDouble() == -1.1 && s2.parse() == "-1.1" && s2.getType() == NumberType::kDefault);
-        assert(s3.getDouble() == -0.1 && s3.parse() == "-0.1" && s3.getType() == NumberType::kDefault);
-        assert(s4.getInt() == -1 && s4.parse() == "-1" && s4.getType() == NumberType::kInteger);
-        assert(s5.getInt() == -10 && s5.parse() == "-10" && s5.getType() == NumberType::kInteger);
-        assert(s6.getInt() == -110 && s6.parse() == "-110" && s6.getType() == NumberType::kInteger);
+        EXPECT_TRUE(test, s1.getType() == NumberType::kDefault);
+        EXPECT_INT(test, -1, s1.getInt());
+        EXPECT_STRING(test, "-1", s1.parse());
+        EXPECT_TRUE(test, s2.getType() == NumberType::kDefault);
+        EXPECT_DOUBLE(test, -1.1, s2.getDouble());
+        EXPECT_STRING(test, "-1.1", s2.parse());
+        EXPECT_TRUE(test, s3.getType() == NumberType::kDefault);
+        EXPECT_DOUBLE(test, -0.1, s3.getDouble());
+        EXPECT_STRING(test, "-0.1", s3.parse());
+        EXPECT_TRUE(test, s4.getType() == NumberType::kDefault);
+        EXPECT_INT(test, -1, s4.getInt());
+        EXPECT_STRING(test, "-1", s4.parse());
+        EXPECT_TRUE(test, s5.getType() == NumberType::kDefault);
+        EXPECT_INT(test, -10, s5.getInt());
+        EXPECT_STRING(test, "-10", s5.parse());
+        EXPECT_TRUE(test, s6.getType() == NumberType::kDefault);
+        EXPECT_INT(test, -110, s6.getInt());
+        EXPECT_STRING(test, "-110", s6.parse());
     }
 
     // 错误测试
-    Number n9;
-    n9.initFromJSON("a.56");                    // 十六进制不支持小数，丢失精度
-    assert(n9.getInt() == 10 && n9.parse() == "0xa" && n9.getType() == NumberType::kHex);
-    Number n10;
-    n10.initFromJSON("qabc5q.56");               // 非法的字符串
-    n4.parseSetting(NumberType::kInteger);      // 浮点数以整数输出会丢失精度
-    assert(n4.getInt() == 3 && n4.parse() == "3");
-    n5.parseSetting(NumberType::kHex);          // 浮点数以十六进制输出会丢失精度
-    assert(n5.getInt() == 3 && n5.parse() == "0x3");
-    n5.initFromJSON("");
+    // Number n9;
+    // n9.initFromJSON("a.56");                    // 十六进制不支持小数，丢失精度
+    // assert(n9.getInt() == 10 && n9.parse() == "0xa" && n9.getType() == NumberType::kHex);
+    // Number n10;
+    // n10.initFromJSON("qabc5q.56");               // 非法的字符串
+    // n4.parseSetting(NumberType::kInteger);      // 浮点数以整数输出会丢失精度
+    // assert(n4.getInt() == 3 && n4.parse() == "3");
+    // n5.parseSetting(NumberType::kHex);          // 浮点数以十六进制输出会丢失精度
+    // assert(n5.getInt() == 3 && n5.parse() == "0x3");
+    // n5.initFromJSON("");
 }
 
 // Null 类测试，覆盖率 100%
 void NullTest(){
+    Test test("NullTest");
+
     // 初始化
     Null n1, n2;
     n2.initFromJSON("null");
-    assert(n1.parse() == "null");
-    assert(n2.parse() == "null");
+    EXPECT_STRING(test, "null", n1.parse());
+    EXPECT_STRING(test, "null", n2.parse());
 
     // 错误测试
-    Null n3;
-    n3.initFromJSON("abc");     // 无法转成 Null 对象
-    n3.initFromJSON("");        // 无法转成 Null 对象
+    // Null n3;
+    // n3.initFromJSON("abc");     // 无法转成 Null 对象
+    // n3.initFromJSON("");        // 无法转成 Null 对象
 }
 
 // String 类测试，覆盖率 100%
 void StringTest(){
+    Test test("StringTest");
+
     // 初始化
     string str = "test\nnext\tline\n";
     String s1(str);                             // String(string&)
@@ -511,152 +682,152 @@ void StringTest(){
                                                 // 这里实际上会经过 String(char[]) -> String(string&&) -> String(String&&)
                                                 // 不过前两步是构造 String("move String") 这个右值对象
     String s7;                                  // 字符串初始化
-    s7.initFromJSON("\"initFromJSON\"");
-    assert(s1.get() == "test\nnext\tline\n");
-    assert(s1.getJSON() == "\"test\\nnext\\tline\\n\"");
-    assert(s1.parse() == "\"test\\nnext\\tline\\n\"");
-    assert(s1.getJSON() == "\"test\\nnext\\tline\\n\"");
-    assert(s2.get() == "test\nnext\tline\n");
-    assert(s2.getJSON() == "\"test\\nnext\\tline\\n\"");
-    assert(s2.parse() == "\"test\\nnext\\tline\\n\"");
-    assert(s2.getJSON() == "\"test\\nnext\\tline\\n\"");
-    assert(s3.get() == "a String");
-    assert(s3.getJSON() == "\"a String\"");
-    assert(s3.parse() == "\"a String\"");
-    assert(s3.getJSON() == "\"a String\"");
-    assert(s4.get() == "a string");
-    assert(s4.getJSON() == "\"a string\"");
-    assert(s4.parse() == "\"a string\"");
-    assert(s4.get() == "a string");
-    assert(s5.get() == "");
-    assert(s5.getJSON() == "\"\"");
-    assert(s5.parse() == "\"\"");
-    assert(s5.getJSON() == "\"\"");
-    assert(s6.get() == "move String");
-    assert(s6.getJSON() == "\"move String\"");
-    assert(s6.parse() == "\"move String\"");
-    assert(s6.getJSON() == "\"move String\"");
-    assert(s7.get() == "initFromJSON");
-    assert(s7.getJSON() == "\"initFromJSON\"");
-    assert(s7.parse() == "\"initFromJSON\"");
-    assert(s7.getJSON() == "\"initFromJSON\"");
+    s7.initFromJSON(R"("initFromJSON")");
+    EXPECT_STRING(test, "test\nnext\tline\n", s1.get());
+    EXPECT_STRING(test, "\"test\\nnext\\tline\\n\"", s1.parse());
+    EXPECT_STRING(test, "test\nnext\tline\n", s2.get());
+    EXPECT_STRING(test, "\"test\\nnext\\tline\\n\"", s2.parse());
+    EXPECT_STRING(test, "a String", s3.get());
+    EXPECT_STRING(test, "\"a String\"", s3.parse());
+    EXPECT_STRING(test, "a string", s4.get());
+    EXPECT_STRING(test, "\"a string\"", s4.parse());
+    EXPECT_STRING(test, "", s5.get());
+    EXPECT_STRING(test, "\"\"", s5.parse());
+    EXPECT_STRING(test, "move String", s6.get());
+    EXPECT_STRING(test, "\"move String\"", s6.parse());
+    EXPECT_STRING(test, "initFromJSON", s7.get());
+    EXPECT_STRING(test, "\"initFromJSON\"", s7.parse());
 
     // 赋值
     String s8, s10, s11;
     s8 = str;                                     // operator=(string&)
     s10 = string("test\nnext\tline\n");           // operator=(string&&)
     s11 = "test\nnext\tline\n";                   // operator=(char[])
-    assert(s8.get() == "test\nnext\tline\n");
-    assert(s8.getJSON() == "\"test\\nnext\\tline\\n\"");
-    assert(s8.parse() == "\"test\\nnext\\tline\\n\"");
-    assert(s8.getJSON() == "\"test\\nnext\\tline\\n\"");
-    assert(s10.get() == "test\nnext\tline\n");
-    assert(s10.getJSON() == "\"test\\nnext\\tline\\n\"");
-    assert(s10.parse() == "\"test\\nnext\\tline\\n\"");
-    assert(s10.getJSON() == "\"test\\nnext\\tline\\n\"");
-    assert(s11.get() == "test\nnext\tline\n");
-    assert(s11.getJSON() == "\"test\\nnext\\tline\\n\"");
-    assert(s11.parse() == "\"test\\nnext\\tline\\n\"");
-    assert(s11.getJSON() == "\"test\\nnext\\tline\\n\"");
+    EXPECT_STRING(test, "test\nnext\tline\n", s8.get());
+    EXPECT_STRING(test, "\"test\\nnext\\tline\\n\"", s8.parse());
+    EXPECT_STRING(test, "test\nnext\tline\n", s10.get());
+    EXPECT_STRING(test, "\"test\\nnext\\tline\\n\"", s10.parse());
+    EXPECT_STRING(test, "test\nnext\tline\n", s11.get());
+    EXPECT_STRING(test, "\"test\\nnext\\tline\\n\"", s11.parse());
 
     // 功能测试
     s1 = "this is a message";
-    assert(s1.get() == "this is a message");
-    assert(s1.getJSON() == "\"this is a message\"");
-    assert(s1.parse() == "\"this is a message\"");
-    assert(s1.getJSON() == "\"this is a message\"");
+    EXPECT_STRING(test, "this is a message", s1.get());
+    EXPECT_STRING(test, "\"this is a message\"", s1.parse());
     s1 = string("abc");
-    assert(s1.get() == "abc");
-    assert(s1.getJSON() == "\"abc\"");
-    assert(s1.parse() == "\"abc\"");
-    assert(s1.getJSON() == "\"abc\"");
+    EXPECT_STRING(test, "abc", s1.get());
+    EXPECT_STRING(test, "\"abc\"", s1.parse());
     s1 = "";
-    assert(s1.get() == "");
-    assert(s1.getJSON() == "\"\"");
-    assert(s1.parse() == "\"\"");
-    assert(s1.getJSON() == "\"\"");
+    EXPECT_STRING(test, "", s1.get());
+    EXPECT_STRING(test, "\"\"", s1.parse());
 
     // 转义字符测试
     String c;
     c.initFromJSON("\"\\\"\\b\\f\\t\\n\\r\\\\\\u002E\"");
-    assert(c.get() == "\"\b\f\t\n\r\\0");
-    assert(c.getJSON() == "\"\\\"\\b\\f\\t\\n\\r\\\\0\"");
-    assert(c.parse() == "\"\\\"\\b\\f\\t\\n\\r\\\\0\"");
-    assert(c.getJSON() == "\"\\\"\\b\\f\\t\\n\\r\\\\0\"");
+    EXPECT_STRING(test, "\"\b\f\t\n\r\\0", c.get());
+    EXPECT_STRING(test, "\"\\\"\\b\\f\\t\\n\\r\\\\0\"", c.parse());
 
     // 错误测试
-    String e;
-    e.initFromJSON("\"\"\"");     // '"' 未转义
-    e.initFromJSON("\"");         // 长度非法，至少需要两个引号
-    e.initFromJSON("\"\\p\"");    // \p 非法转义字符
-    e.initFromJSON("\"\\u1\"");   // \u1 Unicode 非法
-    e.initFromJSON("");           // 长度非法，至少需要两个引号
-    assert(e.get() == "");
-    assert(e.getJSON() == "\"\"");
-    assert(e.parse() == "\"\"");
-    assert(e.getJSON() == "\"\"");
+    // String e;
+    // e.initFromJSON("\"\"\"");     // '"' 未转义
+    // e.initFromJSON("\"");         // 长度非法，至少需要两个引号
+    // e.initFromJSON("\"\\p\"");    // \p 非法转义字符
+    // e.initFromJSON("\"\\u1\"");   // \u1 Unicode 非法
+    // e.initFromJSON("");           // 长度非法，至少需要两个引号
+    // assert(e.get() == "");
+    // assert(e.getJSON() == "\"\"");
+    // assert(e.parse() == "\"\"");
+    // assert(e.getJSON() == "\"\"");
 }
 
 // Boolean 类测试，覆盖率 100%
 void BooleanTest(){
+    Test test("BooleanTest");
+
     // 初始化
     Boolean b1;                     // 默认为 false
-    Boolean b2 = true;              // Boolean(bool)
-    Boolean b3;
-    Boolean b4(b2);                 // Boolean(Boolean&)
-    b3.initFromJSON("false");       // 字符串初始化
-    assert(!b1.get() && b1.parse() == "false");
-    assert(b2.get() && b2.parse() == "true");
-    assert(!b3.get() && b3.parse() == "false");
-    assert(b4.get() && b4.parse() == "true");
+    Boolean b2 = true, b2_ = false; // Boolean(bool)
+    Boolean b3, b3_;
+    Boolean b4(b2), b4_(b2_);       // Boolean(Boolean&)
+    b3.initFromJSON("true");        // 字符串初始化
+    b3_.initFromJSON("false");      // 字符串初始化
+    EXPECT_FALSE(test, b1.get());
+    EXPECT_TRUE(test, b2.get());
+    EXPECT_TRUE(test, b3.get());
+    EXPECT_TRUE(test, b4.get());
+    EXPECT_FALSE(test, b2_.get());
+    EXPECT_FALSE(test, b3_.get());
+    EXPECT_FALSE(test, b4_.get());
+    EXPECT_STRING(test, "false", b1.parse());
+    EXPECT_STRING(test, "true", b2.parse());
+    EXPECT_STRING(test, "true", b3.parse());
+    EXPECT_STRING(test, "true", b4.parse());
+    EXPECT_STRING(test, "false", b2_.parse());
+    EXPECT_STRING(test, "false", b3_.parse());
+    EXPECT_STRING(test, "false", b4_.parse());
 
     // 赋值
     Boolean b5, b6;
-    b6 = true;
-    assert(!b5.get() && b5.parse() == "false");
-    assert(b6.get() && b6.parse() == "true");
+    b5 = true;
+    b6 = false;
+    EXPECT_TRUE(test, b5.get());
+    EXPECT_STRING(test, "true", b5.parse());
+    EXPECT_FALSE(test, b6.get());
+    EXPECT_STRING(test, "false", b6.parse());
 
     // 错误测试
-    Boolean e;
-    e.initFromJSON("abc");      // "abc" 无法转化为 Boolean 对象
-    e.initFromJSON("");         // "" 无法转化为 Boolean 对象
-    assert(!e.get() && e.parse() == "false");
+    // Boolean e;
+    // e.initFromJSON("abc");      // "abc" 无法转化为 Boolean 对象
+    // e.initFromJSON("");         // "" 无法转化为 Boolean 对象
 }
 
 // String JSON5 测试
 // 在 JSON5 下，不支持单双引号混合使用，请一律使用单引号
 void StringJSON5Test(){
+    Test test("StringJSON5Test");
+
     String s1, s2, s3;
     s1.initFromJSON("'Hello World!'");          // 单引号测试
     s2.initFromJSON("'Hello \"World\"!'");      // 单引号测试
     s3.initFromJSON("'Hello \n\t\tWorld!'");    // 换行测试
+    EXPECT_STRING(test, "Hello World!", s1.get());
+    EXPECT_STRING(test, "'Hello World!'", s1.parse());
+    EXPECT_STRING(test, "Hello \"World\"!", s2.get());
+    EXPECT_STRING(test, "'Hello \"World\"!'", s2.parse());
+    EXPECT_STRING(test, "Hello World!", s3.get());
+    EXPECT_STRING(test, "'Hello World!'", s3.parse());
 
     // 错误测试
-    s1.initFromJSON("'Hello 'World!''");    // JSON5 单引号需要转义
-    s1.initFromJSON("\"Hello 'World\"");    // JSON5 的双引号视为单引号
+    // s1.initFromJSON("'Hello 'World!''");    // JSON5 单引号需要转义
+    // s1.initFromJSON("\"Hello 'World\"");    // JSON5 的双引号视为单引号
 }
 
 // Object JSON5 测试
 void ObjectJSON5Test(){
+    Test test("ObjectJSON5Test");
     Object o1;
     o1.initFromJSON("{number: 1.1, age: 12,}");   // 字符串初始化
-    assert(o1.size() == 2 && o1.parse() == "{age: 12, number: 1.1}");
+    EXPECT_INT(test, 2, o1.size());
+    EXPECT_STRING(test, "{age: 12, number: 1.1}", o1.parse());
 
     // 错误测试
-    o1.initFromJSON("{number: 1.1, age: 12,,}");    // 多一个逗号
+    // o1.initFromJSON("{number: 1.1, age: 12,,}");    // 多一个逗号
 }
 
 // Array JSON5 测试
 void ArrayJSON5Test(){
+    Test test("ArrayJSON5Test");
     Array a1;
     a1.initFromJSON("['number', 1.1, false, \n \t ]");   // 字符串初始化
-    assert(a1.size() == 3 && a1.parse() == "['number', 1.1, false]");
+    EXPECT_INT(test, 3, a1.size());
+    EXPECT_STRING(test, "['number', 1.1, false]", a1.parse());
 
     // 错误测试
-    a1.initFromJSON("['number', 1.1, false,,]");    // 多一个逗号
+    // a1.initFromJSON("['number', 1.1, false,,]");    // 多一个逗号
 }
 
 void AnnotationTest(){
+    Test test("AnnotationTest");
     string str(
             "// This is an Annotation\n"
             "{\n"
@@ -675,6 +846,8 @@ void AnnotationTest(){
     removeAnnotation(str);
     Object obj2;
     obj2.initFromJSON(str);
+    EXPECT_STRING(test, "{bool: false, data: 123, info: 'GWB //this shall not be removed'}", obj.parse());
+    EXPECT_STRING(test, "{bool: false, data: 123, info: 'GWB //this shall not be removed'}", obj2.parse());
 }
 
 // JSON5 混合测试
@@ -689,13 +862,13 @@ void JSON5Test(){
     }
 }
 
-int main(){
-    // Windows cmd 中文编码改为 UTF-8
-    // system("chcp 65001");
+void PerformanceTest(){
+    // tiny_json_test::PerformanceTest pt;
+    // pt.run();
+}
 
-    // ===================================================
-    // 出现 [tiny_json_xxx] 的错误或警告请无视，只是测试流程
-    // ===================================================
+int main(){
+    // tiny_json_test::Test::show_details_ = true;
 
     JSON5 = false;
     NumberTest();
@@ -708,13 +881,17 @@ int main(){
     RegExTest();
     FuncTest();
 
-    // // JSON5 测试
+    // JSON5 测试
     JSON5 = true;
     StringJSON5Test();
     ObjectJSON5Test();
     ArrayJSON5Test();
     AnnotationTest();
     JSON5Test();
+
+    // 性能测试
+    JSON5 = false;
+    ::PerformanceTest();
 
     return 0;
 }
