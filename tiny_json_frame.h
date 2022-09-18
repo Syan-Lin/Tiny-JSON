@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include "Windows.h"
+#include <array>
 
 namespace tiny_json_log{
 
@@ -24,9 +25,9 @@ public:
     static void check(std::string, std::string);
     // 打印信息
     static void print(std::string, Color = Color::kDefault);
+    static void setColor(Color);
 private:
     static HANDLE outHandle;
-    static void setColor(Color);
 };
 
 };
@@ -35,11 +36,10 @@ namespace tiny_json_test{
 
 using namespace tiny_json_log;
 
-#define __DEBUG_INFO__ std::string()
-
 class Test{
 public:
     Test(std::string);
+    ~Test();
     void printResult();
     // 断言
     void ExpectTrue(bool, std::string = "");
@@ -53,10 +53,6 @@ public:
     int failed_count_ = 0;
     int passed_count_ = 0;
     static bool show_details_;
-};
-
-class PerformanceTest : public Test{
-
 };
 
 }

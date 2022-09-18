@@ -12,12 +12,10 @@ HANDLE tiny_json_log::Log::outHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 void tiny_json_log::Log::error(std::string type, std::string info){
     setColor(Color::kRed);
     std::cout << "[tiny_json_Error_" + type + "]: " + info << std::endl;
-    setColor(Color::kDefault);
 }
 void tiny_json_log::Log::warning(std::string type, std::string info){
     setColor(Color::kYellow);
     std::cout << "[tiny_json_Warning_" + type + "]: " + info << std::endl;
-    setColor(Color::kDefault);
 }
 void tiny_json_log::Log::info(std::string type, std::string info){
     setColor(Color::kDefault);
@@ -26,12 +24,10 @@ void tiny_json_log::Log::info(std::string type, std::string info){
 void tiny_json_log::Log::check(std::string type, std::string info){
     setColor(Color::kGreen);
     std::cout << "[tiny_json_Info_" + type + "]: " + info << std::endl;
-    setColor(Color::kDefault);
 }
 void tiny_json_log::Log::print(std::string str, Color color){
     setColor(color);
     std::cout << str << std::endl;
-    setColor(Color::kDefault);
 }
 void tiny_json_log::Log::setColor(Color color){
     switch(color){
@@ -56,7 +52,7 @@ void tiny_json_log::Log::setColor(Color color){
 * @brief    Test 类实现
 ***************************/
 
-bool tiny_json_test::Test::show_details_ = true;
+bool tiny_json_test::Test::show_details_ = false;
 
 tiny_json_test::Test::Test(std::string name) : name_(name) {
     Log::print("============================================");
@@ -142,9 +138,12 @@ void tiny_json_test::Test::ExpectString(std::string expect, std::string str, std
     }
 }
 void tiny_json_test::Test::printResult(){
-    int factor = passed_count_ * 100 / (passed_count_ + failed_count_);
+    int factor = (passed_count_ + failed_count_) == 0 ? 0 : passed_count_ * 100 / (passed_count_ + failed_count_);
     Log::print(std::to_string(passed_count_) + "/" + std::to_string(failed_count_ + passed_count_)
             + " Cases passed. (" + std::to_string(factor) + "%)");
+}
+tiny_json_test::Test::~Test(){
+    printResult();
     if(failed_count_ == 0){
         Log::print("Test passed!", Color::kGreen);
     }else{
@@ -152,3 +151,4 @@ void tiny_json_test::Test::printResult(){
     }
     Log::print("==================Test End==================");
 }
+
