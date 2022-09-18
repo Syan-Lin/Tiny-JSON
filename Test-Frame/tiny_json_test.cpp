@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <regex>
 #include <Windows.h>
-#include "tiny_json.h"
+#include "../tiny_json.h"
 
 using namespace std;
 using namespace tiny_json;
