@@ -208,8 +208,7 @@ void ValueTest(){
     Value v2(3.14);                 // Value(double)
     Value v2_(3);                   // Value(int)
     Value v3(true);                 // Value(bool)
-    Value v4("abc");                // Value(char[]) -> Value(string&&)
-    Value v4_(string("abc"));       // Value(string&&)
+    Value v4("abc");                // Value(char[])
     string str = "abc";
     Value v4_str(str);              // Value(string&)
     Value v5(Array({1, 2, 3, false, "123"}));           // Value(Array&&)
@@ -229,7 +228,6 @@ void ValueTest(){
     assert(v2_.getType() == Type::kNumber && v2_.parse() == "3");
     assert(v3.getType() == Type::kBoolean && v3.parse() == "true");
     assert(v4.getType() == Type::kString && v4.parse() == "\"abc\"");
-    assert(v4_.getType() == Type::kString && v4_.parse() == "\"abc\"");
     assert(v4_str.getType() == Type::kString && v4_str.parse() == "\"abc\"");
     assert(v5.getType() == Type::kArray && v5.parse() == "[1, 2, 3, false, \"123\"]");
     assert(v5_.getType() == Type::kArray && v5_.parse() == "[1, 2, 3, false, \"123\"]");
@@ -284,10 +282,10 @@ void ValueTest(){
     Value t1, t2, t3, t4, t5, t6;
     t1 = Object({{"hello", 123}});
     t2 = Array({1, 2, 3});
-    t3 = Number(1);
+    t3 = 1;
     t4 = Null();
-    t5 = Boolean(true);
-    t6 = String("10");
+    t5 = true;
+    t6 = "10";
     assert(t1.getType() == Type::kObject && t1.parse() == "{\"hello\": 123}");
     assert(t2.getType() == Type::kArray && t2.parse() == "[1, 2, 3]");
     assert(t3.getType() == Type::kNumber && t3.parse() == "1");

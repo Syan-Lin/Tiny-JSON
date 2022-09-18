@@ -13,7 +13,7 @@
 #include <regex>
 #include <stack>
 #include <algorithm>
-#include<fstream>
+#include <fstream>
 
 bool tiny_json::JSON5 = false;
 
@@ -75,7 +75,7 @@ std::string tiny_json::parse(Object& obj, bool form){
     return result;
 }
 tiny_json::Object tiny_json::parse(const std::string& str){
-    tiny_json::Object o;
+    Object o;
     if(JSON5){
         std::string temp = str;
         removeAnnotation(temp);
@@ -177,7 +177,7 @@ tiny_json::Object& tiny_json::Object::operator=(Object&& obj) noexcept {
     kv_map_ = std::move(obj.kv_map_);
     return *this;
 }
-tiny_json::Value& tiny_json::Object::operator[](const Key& key){\
+tiny_json::Value& tiny_json::Object::operator[](const Key& key){
     return kv_map_[key];
 }
 
@@ -260,7 +260,6 @@ void tiny_json::Object::initFromJSON(const std::string& str){
         }else{
             // 第一个和最后一个元素特殊处理
             int size = indexes.size();
-            Value v;
             std::string element1 = str_noblank.substr(0, indexes[0]);
             std::string element2 = str_noblank.substr(indexes[size-1] + 1, str_noblank.size() - indexes[size-1]);
             initKV(element1);
@@ -295,9 +294,7 @@ void tiny_json::Object::initKV(const std::string& str){
             break;
         }
     }
-    Value v;
-    v.initFromJSON(value);
-    kv_map_[key] = v;
+    kv_map_.insert({key, Value(std::string(value))});
 }
 
 /**************************
@@ -313,12 +310,11 @@ tiny_json::Value::Value(Null&&) noexcept : Value(){}
 tiny_json::Value::Value(const double val): type_(Type::kNumber), val_(std::make_shared<Number>(val)){}
 tiny_json::Value::Value(const int val): type_(Type::kNumber), val_(std::make_shared<Number>(val)){}
 tiny_json::Value::Value(const bool val): type_(Type::kBoolean), val_(std::make_shared<Boolean>(val)){}
-tiny_json::Value::Value(const char str[]): Value(std::string(str)){}
+tiny_json::Value::Value(const char str[]): type_(Type::kString), val_(std::make_shared<String>(str)){}
 tiny_json::Value::Value(const std::string& str): type_(Type::kString), val_(std::make_shared<String>(str)){}
 tiny_json::Value::Value(std::initializer_list<kv> il): type_(Type::kObject), val_(std::make_shared<Object>(il)){}
 tiny_json::Value::Value(std::string&& str) noexcept {
-    type_ = Type::kString;
-    val_ = std::make_shared<String>(std::move(str));
+    initFromJSON(str);
 }
 
 tiny_json::Value::Value(const Object& val): type_(Type::kObject), val_(std::make_shared<Object>(val)){}
@@ -334,26 +330,7 @@ tiny_json::Value::Value(Array&& val) noexcept {
 tiny_json::Value::Value(const Value& val): type_(val.type_), val_(val.val_){}
 tiny_json::Value::Value(Value&& val) noexcept {
     type_ = val.type_;
-    switch(type_){
-        case Type::kNumber:
-            val_ = std::make_shared<Number>(std::move(static_cast<Number&>(*val.val_)));
-            break;
-        case Type::kBoolean:
-            val_ = std::make_shared<Boolean>(std::move(static_cast<Boolean&>(*val.val_)));
-            break;
-        case Type::kString:
-            val_ = std::make_shared<String>(std::move(static_cast<String&>(*val.val_)));
-            break;
-        case Type::kNull:
-            val_ = std::make_shared<Null>(std::move(static_cast<Null&>(*val.val_)));
-            break;
-        case Type::kObject:
-            val_ = std::make_shared<Object>(std::move(static_cast<Object&>(*val.val_)));
-            break;
-        case Type::kArray:
-            val_ = std::make_shared<Array>(std::move(static_cast<Array&>(*val.val_)));
-            break;
-    }
+    val_ = std::move(val.val_);
 }
 tiny_json::Value& tiny_json::Value::operator=(const Value& val){
     type_ = val.type_;
@@ -362,26 +339,7 @@ tiny_json::Value& tiny_json::Value::operator=(const Value& val){
 }
 tiny_json::Value& tiny_json::Value::operator=(Value&& val) noexcept {
     type_ = val.type_;
-    switch(type_){
-        case Type::kNumber:
-            val_ = std::make_shared<Number>(std::move(static_cast<Number&>(*val.val_)));
-            break;
-        case Type::kBoolean:
-            val_ = std::make_shared<Boolean>(std::move(static_cast<Boolean&>(*val.val_)));
-            break;
-        case Type::kString:
-            val_ = std::make_shared<String>(std::move(static_cast<String&>(*val.val_)));
-            break;
-        case Type::kNull:
-            val_ = std::make_shared<Null>(std::move(static_cast<Null&>(*val.val_)));
-            break;
-        case Type::kObject:
-            val_ = std::make_shared<Object>(std::move(static_cast<Object&>(*val.val_)));
-            break;
-        case Type::kArray:
-            val_ = std::make_shared<Array>(std::move(static_cast<Array&>(*val.val_)));
-            break;
-    }
+    val_ = std::move(val.val_);
     return *this;
 }
 tiny_json::Value& tiny_json::Value::operator=(const double val){
@@ -422,36 +380,6 @@ tiny_json::Value& tiny_json::Value::operator=(const std::string& str){
 }
 tiny_json::Value& tiny_json::Value::operator=(const char str[]){
     return operator=(std::string(str));
-}
-tiny_json::Value& tiny_json::Value::operator=(const Object& val){
-    type_ = Type::kObject;
-    val_ = std::make_shared<Object>(val);
-    return *this;
-}
-tiny_json::Value& tiny_json::Value::operator=(const Number& val){
-    type_ = Type::kNumber;
-    val_ = std::make_shared<Number>(val);
-    return *this;
-}
-tiny_json::Value& tiny_json::Value::operator=(const String& val){
-    type_ = Type::kString;
-    val_ = std::make_shared<String>(val);
-    return *this;
-}
-tiny_json::Value& tiny_json::Value::operator=(const Null& val){
-    type_ = Type::kNull;
-    val_ = std::make_shared<Null>(val);
-    return *this;
-}
-tiny_json::Value& tiny_json::Value::operator=(const Boolean& val){
-    type_ = Type::kBoolean;
-    val_ = std::make_shared<Boolean>(val);
-    return *this;
-}
-tiny_json::Value& tiny_json::Value::operator=(const Array& val){
-    type_ = Type::kArray;
-    val_ = std::make_shared<Array>(val);
-    return *this;
 }
 tiny_json::Value& tiny_json::Value::operator[](const std::string& key){
     if(type_ == Type::kObject){
@@ -507,41 +435,30 @@ template<> std::string& tiny_json::Value::get<std::string>(){
     return static_cast<String&>(*val_).get();
 }
 template<> tiny_json::Null& tiny_json::Value::get<tiny_json::Null>(){
-    if(type_ != Type::kNumber){
+    if(type_ != Type::kNull){
         std::cout << "[tiny_json_Error_Object]: 返回类型不符合: " << parse() << std::endl;
     }
     return static_cast<Null&>(*val_);
 }
 template<> tiny_json::Array& tiny_json::Value::get<tiny_json::Array>(){
     if(type_ != Type::kArray){
-        std::cout << "[tiny_json_Error_Object]: 返回类型不符合: " << parse() << "，期待返回 Array" << std::endl;
+        std::cout << "[tiny_json_Error_Object]: 返回类型不符合: " << parse() << std::endl;
     }
     return static_cast<Array&>(*val_);
 }
 template<> tiny_json::Object& tiny_json::Value::get<tiny_json::Object>(){
     if(type_ != Type::kObject){
-        std::cout << "[tiny_json_Error_Object]: 返回类型不符合: " << parse() << "，期待返回 Object" << std::endl;
+        std::cout << "[tiny_json_Error_Object]: 返回类型不符合: " << parse() << std::endl;
     }
     return static_cast<Object&>(*val_);
 }
 
 std::string tiny_json::Value::parse(){
-    switch(type_){
-        case Type::kNull:
-            return static_cast<Null&>(*val_).parse();
-        case Type::kNumber:
-            return static_cast<Number&>(*val_).parse();
-        case Type::kString:
-            return static_cast<String&>(*val_).parse();
-        case Type::kArray:
-            return static_cast<Array&>(*val_).parse();
-        case Type::kBoolean:
-            return static_cast<Boolean&>(*val_).parse();
-        case Type::kObject:
-            return static_cast<Object&>(*val_).parse();
+    if(val_ == nullptr){
+        std::cout << "[tiny_json_Error_Object]: 试图对空指针进行操作" << std::endl;
+        return "";
     }
-    std::cout << "[tiny_json_Error_Value]: Value 对象错误!" << std::endl;
-    return "";
+    return val_->parse();
 }
 void tiny_json::Value::initFromJSON(const std::string& str){
     using namespace reg_ex;
@@ -566,7 +483,7 @@ void tiny_json::Value::initFromJSON(const std::string& str){
         val_->initFromJSON(str);
         type_ = Type::kArray;
     }else if(regex_match(str, kPatternObj)){
-        val_ = std::make_shared<Object>();       // Todo
+        val_ = std::make_shared<Object>();
         val_->initFromJSON(str);
         type_ = Type::kObject;
     }else{
@@ -589,15 +506,13 @@ tiny_json::Array::Array(std::initializer_list<Value> il){
     }
 }
 tiny_json::Array::Array(const Array& val){
-    for(int i = 0; i < val.size(); i++){
-        this->append(val.arr_[i]);
-    }
+    arr_ = val.arr_;
 }
-tiny_json::Array::Array(Array&& val) noexcept { arr_ = std::move(val.arr_); }
+tiny_json::Array::Array(Array&& val) noexcept {
+    arr_ = std::move(val.arr_);
+}
 tiny_json::Array& tiny_json::Array::operator=(const Array& val){
-    for(int i = 0; i < val.size(); i++){
-        this->append(val.arr_[i]);
-    }
+    arr_ = val.arr_;
     return *this;
 }
 tiny_json::Array& tiny_json::Array::operator=(Array&& val) noexcept {
@@ -687,22 +602,18 @@ void tiny_json::Array::initFromJSON(const std::string& val){
         if(!checkQuoMark(str, indexes)){
             return;
         }
-        Value v;
         if(indexes.size() == 0){
             // 特殊情况，只有一个元素
-            v.initFromJSON(str);
-            append(v);
+            append(Value(std::string(str)));
         }else{
             // 第一个和最后一个元素特殊处理
             int size = indexes.size();
             std::string element1 = str.substr(0, indexes[0]);
             std::string element2 = str.substr(indexes[size-1] + 1, str.size() - indexes[size-1]);
-            v.initFromJSON(element1);
-            append(v);
+            append(Value(std::string(element1)));
             for(int i = 1; i < size; i++){
                 std::string element = str.substr(indexes[i-1] + 1, indexes[i] - indexes[i-1] - 1);
-                v.initFromJSON(element);
-                append(v);
+                append(Value(std::string(element)));
             }
             bool isElement = false;
             for(int i = 0; i < element2.size(); i++){
@@ -713,8 +624,7 @@ void tiny_json::Array::initFromJSON(const std::string& val){
                 }
             }
             if(isElement){
-                v.initFromJSON(element2);
-                append(v);
+                append(Value(std::string(element2)));
             }
         }
     }else{
@@ -1135,7 +1045,7 @@ void tiny_json::String::initFromJSON(const std::string& str){
 // 拷贝控制成员
 tiny_json::Boolean::Boolean(const bool val): bool_(val) {}
 tiny_json::Boolean::Boolean(const Boolean& val): bool_(val.bool_){}
-tiny_json::Boolean::Boolean(Boolean&& val) noexcept : bool_(std::move(val.bool_)) {}
+tiny_json::Boolean::Boolean(Boolean&& val) noexcept : bool_(std::move(val.bool_)){}
 tiny_json::Boolean& tiny_json::Boolean::operator=(const bool val){
     bool_ = val;
     return *this;

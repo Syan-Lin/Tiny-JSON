@@ -62,6 +62,8 @@ public:
 // 可以是 Number、Boolean、String、Null、Object、Array
 class Value : public Parseable{
     typedef std::pair<std::string, Value> kv;
+    friend class Object;
+    friend class Array;
 public:
     // 拷贝控制成员
     Value();
@@ -77,7 +79,6 @@ public:
     Value(const std::string&);           // String 初始化
     Value(const char[]);                 // String 初始化
     Value(const Value&);                 // 拷贝构造
-    Value(std::string&&) noexcept;       // String 移动构造
     Value(Value&&) noexcept;             // 移动构造
     Value& operator=(const Value&);      // 拷贝赋值
     Value& operator=(Value&&) noexcept;  // 移动赋值
@@ -85,12 +86,6 @@ public:
     Value& operator=(const int);
     Value& operator=(const bool);
     Value& operator=(const std::string&);
-    Value& operator=(const Object&);
-    Value& operator=(const Array&);
-    Value& operator=(const Number&);
-    Value& operator=(const String&);
-    Value& operator=(const Null&);
-    Value& operator=(const Boolean&);
     Value& operator=(const char[]);
     Value& operator[](const std::string&);
     Value& operator[](const size_t);
@@ -111,6 +106,7 @@ public:
     void initFromJSON(const std::string&) override;
 
 private:
+    explicit Value(std::string&&) noexcept;     // 字符串初始化 Value 对象
     Type type_;
     std::shared_ptr<Parseable> val_;
 };
