@@ -89,7 +89,7 @@ tiny_json::Object tiny_json::readFile(const std::string& path){
     std::ifstream file;
 	file.open(path, std::ios::in);
 	if(!file.is_open()){
-		std::cout << "无法打开文件：" + path << std::endl;
+        Log::error("file", "无法打开文件：" + path);
 		return Object();
 	}
 	std::string buff, result;
@@ -103,7 +103,7 @@ void tiny_json::writeFile(const std::string& path, const std::string& json){
     std::ofstream ofs;
 	ofs.open(path, std::ios::out);
     if(!ofs.is_open()){
-        std::cout << "文件打开失败，路径：" + path << std::endl;
+        Log::error("file", "文件写入失败，路径：" + path);
         return;
     }
     ofs << json;
@@ -184,8 +184,7 @@ tiny_json::Value& tiny_json::Object::operator[](const Key& key){
 // 功能成员
 void tiny_json::Object::add(const Key& key, const Value& val){
     if(kv_map_.find(key) != kv_map_.end()){
-        std::cout << "[tiny_json_Warning_Object]: Key: " << key
-        << " 已存在于 Object 对象，将覆盖!" << std::endl;
+        Log::error("Object", "Key: " + key + " 已存在于 Object 对象，将覆盖!");
     }
     kv_map_[key] = val;
 }
@@ -193,8 +192,7 @@ void tiny_json::Object::remove(const Key& key){
     if(kv_map_.find(key) != kv_map_.end()){
         kv_map_.erase(key);
     }else{
-        std::cout << "[tiny_json_Warning_Object]: Key: " << key
-        << " 不存在!" << std::endl;
+        Log::error("Object", "Key: " + key + " 不存在!");
     }
 }
 tiny_json::Type tiny_json::Object::getType(const Key& key){
@@ -243,8 +241,7 @@ void tiny_json::Object::initFromJSON(const std::string& str){
         }
     }
     if(temp.size() < 2){
-        std::cout << "[tiny_json_Error]: 字符串 " << str
-        << " 不能转化为 Object 对象!" << std::endl;
+        Log::error("Object", "字符串 " + str + " 不能转化为 Object 对象!");
         return;
     }
     if(parseable(temp, Type::kObject)){
@@ -280,8 +277,7 @@ void tiny_json::Object::initFromJSON(const std::string& str){
             }
         }
     }else{
-        std::cout << "[tiny_json_Error]: 字符串 " << str
-        << " 不能转化为 Object 对象!" << std::endl;
+        Log::error("Object", "字符串 " + str + " 不能转化为 Object 对象!");
     }
 }
 void tiny_json::Object::initKV(const std::string& str){
@@ -385,7 +381,7 @@ tiny_json::Value& tiny_json::Value::operator[](const std::string& key){
     if(type_ == Type::kObject){
         return static_cast<Object&>(*val_)[key];
     }else{
-        std::cout << "[tiny_json_Error_Object]: 非 Object 类型无法使用 [<string>]" << parse() << std::endl;
+        Log::error("Value", "非 Object 类型无法使用 [key]: " + parse());
     }
     return *this;
 }
@@ -393,7 +389,7 @@ tiny_json::Value& tiny_json::Value::operator[](const size_t index){
     if(type_ == Type::kArray){
         return static_cast<Array&>(*val_)[index];
     }else{
-        std::cout << "[tiny_json_Error_Object]: 非 Array 类型无法使用 [<int>]" << parse() << std::endl;
+        Log::error("Value", "非 Array 类型无法使用 [index]: " + parse());
     }
     return *this;
 }
@@ -402,7 +398,7 @@ tiny_json::Value& tiny_json::Value::operator[](const size_t index){
 tiny_json::Type tiny_json::Value::getType() const { return type_; }
 tiny_json::Number& tiny_json::Value::getNumber(){
     if(type_ != Type::kNumber){
-        std::cout << "[tiny_json_Error_Object]: 非 Number 类型无法使用 getNumber()" << parse() << std::endl;
+        Log::error("Value", "非 Number 类型无法使用 getNumber(): " + parse());
     }
     return static_cast<Number&>(*val_);
 }
@@ -412,50 +408,50 @@ void tiny_json::Value::reset(){
 }
 template<> double& tiny_json::Value::get<double>(){
     if(type_ != Type::kNumber){
-        std::cout << "[tiny_json_Error_Object]: 返回类型不符合: " << parse() << std::endl;
+        Log::error("Value", "返回类型不符合: " + parse());
     }
     return static_cast<Number&>(*val_).getDouble();
 }
 template<> int& tiny_json::Value::get<int>(){
     if(type_ != Type::kNumber){
-        std::cout << "[tiny_json_Error_Object]: 返回类型不符合: " << parse() << std::endl;
+        Log::error("Value", "返回类型不符合: " + parse());
     }
     return static_cast<Number&>(*val_).getInt();
 }
 template<> bool& tiny_json::Value::get<bool>(){
     if(type_ != Type::kBoolean){
-        std::cout << "[tiny_json_Error_Object]: 返回类型不符合: " << parse() << std::endl;
+        Log::error("Value", "返回类型不符合: " + parse());
     }
     return static_cast<Boolean&>(*val_).get();
 }
 template<> std::string& tiny_json::Value::get<std::string>(){
     if(type_ != Type::kString){
-        std::cout << "[tiny_json_Error_Object]: 返回类型不符合: " << parse() << std::endl;
+        Log::error("Value", "返回类型不符合: " + parse());
     }
     return static_cast<String&>(*val_).get();
 }
 template<> tiny_json::Null& tiny_json::Value::get<tiny_json::Null>(){
     if(type_ != Type::kNull){
-        std::cout << "[tiny_json_Error_Object]: 返回类型不符合: " << parse() << std::endl;
+        Log::error("Value", "返回类型不符合: " + parse());
     }
     return static_cast<Null&>(*val_);
 }
 template<> tiny_json::Array& tiny_json::Value::get<tiny_json::Array>(){
     if(type_ != Type::kArray){
-        std::cout << "[tiny_json_Error_Object]: 返回类型不符合: " << parse() << std::endl;
+        Log::error("Value", "返回类型不符合: " + parse());
     }
     return static_cast<Array&>(*val_);
 }
 template<> tiny_json::Object& tiny_json::Value::get<tiny_json::Object>(){
     if(type_ != Type::kObject){
-        std::cout << "[tiny_json_Error_Object]: 返回类型不符合: " << parse() << std::endl;
+        Log::error("Value", "返回类型不符合: " + parse());
     }
     return static_cast<Object&>(*val_);
 }
 
 std::string tiny_json::Value::parse(){
     if(val_ == nullptr){
-        std::cout << "[tiny_json_Error_Object]: 试图对空指针进行操作" << std::endl;
+        Log::error("Value", "试图对空指针进行操作!");
         return "";
     }
     return val_->parse();
@@ -487,8 +483,7 @@ void tiny_json::Value::initFromJSON(const std::string& str){
         val_->initFromJSON(str);
         type_ = Type::kObject;
     }else{
-        std::cout << "[tiny_json_Error]: 字符串 " << str
-        << " 不能转化为 Value 对象!" << std::endl;
+        Log::error("Value", "字符串 " + str + " 不能转化为 Value 对象!");
     }
 }
 
@@ -550,8 +545,7 @@ bool tiny_json::Array::checkIndex(const size_t index){
     if(index < arr_.size()){
         return true;
     }else{
-        std::cout << "[tiny_json_Error_Array]: index: " << index
-        << " 数组越界! at: " << parse() << std::endl;
+        Log::error("Array", "index: " + std::to_string(index) + " 数组越界! at: " + parse());
         return false;
     }
 }
@@ -559,8 +553,7 @@ bool tiny_json::Array::checkIndexAdd(const size_t index){
     if(index <= arr_.size()){
         return true;
     }else{
-        std::cout << "[tiny_json_Error_Array]: index: " << index
-        << " 数组越界! at: " << parse() << std::endl;
+        Log::error("Array", "index: " + std::to_string(index) + " 数组越界! at: " + parse());
         return false;
     }
 }
@@ -589,8 +582,7 @@ std::string tiny_json::Array::parse(){
 }
 void tiny_json::Array::initFromJSON(const std::string& val){
     if(val.size() < 2 || !(val[0] == '[' && val[val.size() - 1] == ']')){
-        std::cout << "[tiny_json_Error]: 字符串 " << val
-        << " 不能转化为 Array 对象!" << std::endl;
+        Log::error("Array", "字符串 " + val + " 不能转化为 Array 对象!");
         return;
     }
     if(parseable(val, Type::kArray)){
@@ -628,8 +620,7 @@ void tiny_json::Array::initFromJSON(const std::string& val){
             }
         }
     }else{
-        std::cout << "[tiny_json_Error]: 字符串 " << val
-        << " 不能转化为 Array 对象!" << std::endl;
+        Log::error("Array", "字符串 " + val + " 不能转化为 Array 对象!");
     }
 }
 
@@ -722,8 +713,7 @@ int& tiny_json::Number::getInt(){
     if(type_ == NumberType::kFloat || type_ == NumberType::kDefault){
         bool is_integer = (static_cast<long long>(num_double_) == num_double_);
         if(!is_integer){
-            std::cout << "[tiny_json_Warning_Number]: 浮点数 " << num_double_
-            << " 转化为整数会丢失精度!" << std::endl;
+            Log::warning("Number", "浮点数 " + std::to_string(num_double_) + " 转化为整数会丢失精度!");
         }
         int temp = static_cast<int>(num_double_);
         num_int_ = temp;
@@ -769,8 +759,7 @@ void tiny_json::Number::parseSetting(NumberType type, size_t decimal_place){
         && (type_ == NumberType::kFloat || type_ == NumberType::kDefault)){
         bool is_integer = (static_cast<long long>(num_double_) == num_double_);
         if(!is_integer){
-            std::cout << "[tiny_json_Warning_Number]: 浮点数 " << num_double_
-            << " 转化为整数会丢失精度!" << std::endl;
+            Log::warning("Number", "浮点数 " + std::to_string(num_double_) + " 转化为整数会丢失精度!");
         }
         int temp = static_cast<int>(num_double_);
         num_int_ = temp;
@@ -780,8 +769,7 @@ void tiny_json::Number::parseSetting(NumberType type, size_t decimal_place){
 }
 void tiny_json::Number::initFromJSON(const std::string& str){
     if(str.size() == 0){
-        std::cout << "[tiny_json_Error]: 字符串 " << str
-        << " 不能转化为 Number 对象!" << std::endl;
+        Log::error("Number", "字符串 " + str + " 不能转化为 Number 对象!");
         return;
     }
     bool isHex = (str.size() >= 2 && str[0] == '0') && (str[1] == 'x' || str[1] == 'X');
@@ -792,12 +780,10 @@ void tiny_json::Number::initFromJSON(const std::string& str){
             type_ = NumberType::kHex;
             int i = str.find('.');
             if(i >= 0){
-                std::cout << "[tiny_json_Warning]: 字符串 " << str
-                << " 转化为 Number 对象可能会丢失精度!" << std::endl;
+                Log::warning("Number", "字符串 " + str + " 转化为整数会丢失精度!");
             }
         }catch(std::invalid_argument){
-            std::cout << "[tiny_json_Error]: 字符串 " << str
-            << " 不能转化为 Number 对象!" << std::endl;
+            Log::error("Number", "字符串 " + str + " 不能转化为 Number 对象!");
         }
     }else{
         try{
@@ -814,12 +800,10 @@ void tiny_json::Number::initFromJSON(const std::string& str){
                 }
                 int i = str.find('.');
                 if(i >= 0){
-                    std::cout << "[tiny_json_Warning]: 字符串 " << str
-                    << " 转化为 Number 对象可能会丢失精度!" << std::endl;
+                    Log::warning("Number", "字符串 " + str + " 转化为整数会丢失精度!");
                 }
             }catch(std::invalid_argument){
-                std::cout << "[tiny_json_Error]: 字符串 " << str
-                << " 不能转化为 Number 对象!" << std::endl;
+                Log::error("Number", "字符串 " + str + " 不能转化为 Number 对象!");
             }
         }
     }
@@ -840,8 +824,7 @@ tiny_json::Null::Null(Null&&) noexcept {}
 std::string tiny_json::Null::parse(){ return "null"; }
 void tiny_json::Null::initFromJSON(const std::string& str){
     if(!parseable(str, Type::kNull)){
-        std::cout << "[tiny_json_Error]: 字符串 " << str
-        << " 不能转化为 Null 对象!" << std::endl;
+        Log::error("Null", "字符串 " + str + " 不能转化为 Null 对象!");
     }
 }
 
@@ -897,8 +880,7 @@ std::string tiny_json::String::parse() {
     if(is_parsed_){
         return parsed_str_;
     }else if(!parseableString(str)){
-        std::cout << "[tiny_json_Error]: 字符串 " << str
-        << " 不能转化为 String 对象!" << std::endl;
+        Log::error("String", "字符串 " + str + " 不能转化为 String 对象!");
         return "\"\"";
     }
     is_parsed_ = true;
@@ -1012,8 +994,7 @@ void tiny_json::String::parseForJSON(){
 }
 void tiny_json::String::initFromJSON(const std::string& str){
     if(!parseableString(str)){
-        std::cout << "[tiny_json_Error]: 字符串 " << str
-        << " 不能转化为 String 对象!" << std::endl;
+        Log::error("String", "字符串 " + str + " 不能转化为 String 对象!");
         return;
     }
     std::string temp = str;
@@ -1058,7 +1039,7 @@ std::string tiny_json::Boolean::parse(){
 }
 void tiny_json::Boolean::initFromJSON(const std::string& str){
     if(!parseable(str, Type::kBoolean)){
-        std::cout << "[tiny_json_Error]: 字符串 " << str << " 不能转化为 Boolean 对象!" << std::endl;
+        Log::error("Boolean", "字符串 " + str + " 不能转化为 Boolean 对象!");
         return;
     }
     bool_ = (str == "true") ? true : false;
@@ -1102,12 +1083,10 @@ static bool checkQuoMark(const std::string& str, std::vector<int>& indexes){
         }
     }
     if(d != 0 || f != 0){
-        std::cout << "[tiny_json_Error]: 字符串 " << str
-        << " 不能转化为 Object 或 Array 对象!(括号错误)" << std::endl;
+        tiny_json_log::Log::error("check", "字符串 " + str + "不能转化为 Object 或 Array 对象!(括号错误)");
         return false;
     }else if(num_d != 0 || num_s != 0){
-        std::cout << "[tiny_json_Error]: 字符串 " << str
-        << " 不能转化为 Object 或 Array 对象!(单双引号错误)" << std::endl;
+        tiny_json_log::Log::error("check", "字符串 " + str + "不能转化为 Object 或 Array 对象!(单双引号错误)");
         return false;
     }
     return true;
@@ -1330,7 +1309,7 @@ static std::string& format(std::string& str){
             num_s--;
         }
         if(num_d < 0 || num_s < 0){
-            std::cout << "[tiny_json_Error]: 格式化错误!" << std::endl;
+            tiny_json_log::Log::error("format", "格式化错误!");
             break;
         }
 

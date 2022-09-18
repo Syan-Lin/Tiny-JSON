@@ -630,9 +630,6 @@ void StringJSON5Test(){
     s1.initFromJSON("'Hello World!'");          // 单引号测试
     s2.initFromJSON("'Hello \"World\"!'");      // 单引号测试
     s3.initFromJSON("'Hello \n\t\tWorld!'");    // 换行测试
-    cout << s1.get() << " " << s1.getJSON() << " " << s1.parse() << endl;
-    cout << s2.get() << " " << s2.getJSON() << " " << s2.parse() << endl;
-    cout << s3.get() << " " << s3.getJSON() << " " << s3.parse() << endl;
 
     // 错误测试
     s1.initFromJSON("'Hello 'World!''");    // JSON5 单引号需要转义
@@ -653,7 +650,6 @@ void ObjectJSON5Test(){
 void ArrayJSON5Test(){
     Array a1;
     a1.initFromJSON("['number', 1.1, false, \n \t ]");   // 字符串初始化
-    cout << a1.parse() << " " << a1.size() << endl;
     assert(a1.size() == 3 && a1.parse() == "['number', 1.1, false]");
 
     // 错误测试
@@ -679,9 +675,6 @@ void AnnotationTest(){
     removeAnnotation(str);
     Object obj2;
     obj2.initFromJSON(str);
-
-    cout << obj.parse() << endl;
-    cout << obj2.parse() << endl;
 }
 
 // JSON5 混合测试

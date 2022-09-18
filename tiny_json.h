@@ -5,8 +5,11 @@
 #include <map>
 #include <vector>
 #include <regex>
+#include "tiny_json_frame.h"
 
 namespace tiny_json{
+
+using namespace tiny_json_log;
 
 // 输出是否使用 JSON5 标准
 // 注意事项：JSON5 下字符串请一律使用单引号包裹，且字符串中单引号需要转义
