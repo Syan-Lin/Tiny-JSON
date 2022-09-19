@@ -808,7 +808,15 @@ void JSON5Test(){
 
 void PerformanceTest(){
     Performance pt;
+    pt.setScale(10);
+    pt.run();
+    pt.setScale(100);
+    pt.run();
+    pt.setScale(1000);
+    pt.run();
     pt.setScale(10000);
+    pt.run();
+    // pt.setScale(10000);
     // pt.setScale(10, Type::kNull);
     // pt.setScale(20, Type::kNumber);
     // pt.setScale(50, Type::kObject);
@@ -816,11 +824,19 @@ void PerformanceTest(){
     // pt.setScale(10, Type::kBoolean);
     // pt.setScale(20, Type::kArray);
     // pt.runLoop(1);
-    pt.run();
+    pt.setScale(10, Type::kNull);
+    pt.setScale(20, Type::kNumber);
+    pt.setScale(50, Type::kObject);
+    pt.setScale(50, Type::kString);
+    pt.setScale(10, Type::kBoolean);
+    pt.setScale(20, Type::kArray);
+    pt.runLoop(100);
+    pt.runLoop(1000);
 }
 
 int main(){
     tiny_json_test::Test::show_details_ = false;
+    FORMAT_CHECK = false;
 
     JSON5 = false;
     NumberTest();

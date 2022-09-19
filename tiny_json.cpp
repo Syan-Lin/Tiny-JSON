@@ -1,9 +1,9 @@
 
 /**************************
 * @author   Yuan.
-* @date     2022/9/13
+* @date     2022/9/19
 * @brief    tiny_json 实现
-* @version  v1.0 release
+* @version  v1.2 test
 ***************************/
 
 #include "tiny_json.h"
@@ -46,6 +46,7 @@ static std::string& format(std::string&);
 ***************************/
 
 bool tiny_json::parseable(const std::string& str, tiny_json::Type type){
+    if(!tiny_json::FORMAT_CHECK) return true;
     using namespace tiny_json;
     switch(type){
         case Type::kValue:
@@ -1104,6 +1105,7 @@ static std::string& removeBlank(std::string& val){
     return val;
 }
 static bool parseableArray(const std::string& str){
+    if(!tiny_json::FORMAT_CHECK) return true;
     if(str.size() < 2){
         return false;
     }
@@ -1152,6 +1154,7 @@ static bool parseableArray(const std::string& str){
     return true;
 }
 static bool parseableNumber(const std::string& str){
+    if(!tiny_json::FORMAT_CHECK) return true;
     try{
         std::stod(str);
     }catch(std::invalid_argument){
@@ -1166,6 +1169,7 @@ static bool parseableNumber(const std::string& str){
 }
 // 带有引号的字符串(支持 JSON5)
 static bool parseableString(const std::string& val){
+    if(!tiny_json::FORMAT_CHECK) return true;
     bool json5;
     if(val.size() < 2){
         return false;
@@ -1237,6 +1241,7 @@ static bool checkKV(const std::string& str){
     return parseable(value, tiny_json::Type::kValue);
 }
 static bool parseableObject(const std::string& str){
+    if(!tiny_json::FORMAT_CHECK) return true;
     if(str.size() < 2 || !(str[0] == '{' && str[str.size() - 1] == '}')){
         return false;
     }

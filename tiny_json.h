@@ -73,8 +73,8 @@ class Value : public Parseable{
 public:
     // 拷贝控制成员
     Value();
-    Value(const Object&);
     Value(Null);
+    Value(const Object&);
     Value(Object&&) noexcept;
     Value(const Array&);
     Value(Array&&) noexcept;

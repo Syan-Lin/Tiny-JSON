@@ -98,10 +98,12 @@ void tiny_json_performance::Performance::run(){
     }
     cst_time[5] = getTime();
     print(cst_time);
-
-    Log::print("[----------------------- Parse time (ms) -----------------------]");
+    Log::print("[----------------------- Write JSON (ms) -----------------------]");
     string temp = parse(obj);
     printLine(to_string(getTime()));
+    Object init = parse(temp);
+    Log::print("[------------------------ Read JSON (ms) -----------------------]");
+    printLine("str_size: " + to_string(temp.size()) + ", " + to_string(getTime()) + "ms");
 
     array<int, 6> dst_time;
     // 析构 Null
@@ -155,6 +157,7 @@ void tiny_json_performance::Performance::runLoop(int loop){
     Log::print("[---------------------------- Loops ----------------------------]");
     printLine(to_string(loop));
     getTime();
+    string json;
     for(int i = 0; i < loop; i++){
         Object obj;
         // 构造 Null
@@ -187,9 +190,10 @@ void tiny_json_performance::Performance::runLoop(int loop){
             string tag = "#bool" + to_string(i);
             obj[tag] = Value(true);
         }
-        string temp = parse(obj);
+        json = parse(obj);
     }
-    Log::print("[----------------------- Total time (ms) -----------------------]");
+    Log::print("[--------------------- Construct time (ms) ---------------------]");
+    Log::print("[--------------------- Includes write JSON ---------------------]");
     printLine(to_string(getTime()));
     Log::print("[===============================================================]");
 }
