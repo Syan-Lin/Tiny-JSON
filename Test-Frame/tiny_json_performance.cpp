@@ -102,6 +102,46 @@ void tiny_json_performance::Performance::run(){
     Log::print("[----------------------- Parse time (ms) -----------------------]");
     string temp = parse(obj);
     printLine(to_string(getTime()));
+
+    array<int, 6> dst_time;
+    // 析构 Null
+    for(int i = 0; i < null_num_; i++){
+        string tag = "#null" + to_string(i);
+        obj.remove(tag);
+    }
+    dst_time[0] = getTime();
+    // 析构 Array
+    for(int i = 0; i < array_num_; i++){
+        string tag = "#array" + to_string(i);
+        obj.remove(tag);
+    }
+    dst_time[1] = getTime();
+    // 析构 Object
+    for(int i = 0; i < object_num_; i++){
+        string tag = "#object" + to_string(i);
+        obj.remove(tag);
+    }
+    dst_time[2] = getTime();
+    // 析构 String
+    for(int i = 0; i < string_num_; i++){
+        string tag = "#string" + to_string(i);
+        obj.remove(tag);
+    }
+    dst_time[3] = getTime();
+    // 析构 Number
+    for(int i = 0; i < number_num_; i++){
+        string tag = "#number" + to_string(i);
+        obj.remove(tag);
+    }
+    dst_time[4] = getTime();
+    // 析构 Boolean
+    for(int i = 0; i < bool_num_; i++){
+        string tag = "#bool" + to_string(i);
+        obj.remove(tag);
+    }
+    dst_time[5] = getTime();
+    Log::print("[--------------------- Destruct time (ms) ----------------------]");
+    print(dst_time);
     Log::print("[===============================================================]");
 }
 void tiny_json_performance::Performance::runLoop(int loop){
