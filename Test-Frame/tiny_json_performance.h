@@ -12,10 +12,12 @@ class Performance{
 public:
     void setScale(int, Type);
     void setScale(int);
-    void print(std::array<int, 6>);
     void run();
+    void runLoop(int);
     DWORD getTime();
 private:
+    void printLine(std::string);
+    void print(std::array<int, 6>);
     DWORD time_start_ = 0, time_end_ = 0;
     int array_num_ = 0;
     int string_num_ = 0;

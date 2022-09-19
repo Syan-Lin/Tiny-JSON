@@ -56,9 +56,9 @@ void tiny_json_performance::Performance::run(){
     Log::print("[===============================================================]");
     Log::print("[--------------- Run tiny_json performance test ----------------]");
     Log::print("|     Null  |  Array  |  Object |  String | Number  | Boolean   |");
-    Log::print("[----------------------- scale of types ------------------------]");
+    Log::print("[---------------- Scale of types in one object -----------------]");
     print({null_num_, array_num_, object_num_, string_num_, number_num_, bool_num_});
-    Log::print("[--------------------- construct time (ms) ---------------------]");
+    Log::print("[--------------------- Construct time (ms) ---------------------]");
     array<int, 6> cst_time;
     getTime();
     // 构造 Null
@@ -99,19 +99,68 @@ void tiny_json_performance::Performance::run(){
     cst_time[5] = getTime();
     print(cst_time);
 
-    Log::print("[----------------------- parse time (ms) -----------------------]");
+    Log::print("[----------------------- Parse time (ms) -----------------------]");
     string temp = parse(obj);
-    auto parse_time = getTime();
-
-    string time = to_string(parse_time);
-    string blank((63 - time.size()) / 2, ' ');
-    if(time.size() % 2 == 0){
-        time = "|" + blank + time + blank + " |";
-    }else{
-        time = "|" + blank + time + blank + "|";
-    }
-    Log::print(time);
+    printLine(to_string(getTime()));
     Log::print("[===============================================================]");
+}
+void tiny_json_performance::Performance::runLoop(int loop){
+    using namespace tiny_json;
+    using namespace std;
+    Log::print("[===============================================================]");
+    Log::print("[--------------- Run tiny_json performance test ----------------]");
+    Log::print("|     Null  |  Array  |  Object |  String | Number  | Boolean   |");
+    Log::print("[---------------- Scale of types in one object -----------------]");
+    print({null_num_, array_num_, object_num_, string_num_, number_num_, bool_num_});
+    Log::print("[---------------------------- Loops ----------------------------]");
+    printLine(to_string(loop));
+    getTime();
+    for(int i = 0; i < loop; i++){
+        Object obj;
+        // 构造 Null
+        for(int i = 0; i < null_num_; i++){
+            string tag = "#null" + to_string(i);
+            obj[tag] = Null();
+        }
+        // 构造 Array
+        for(int i = 0; i < array_num_; i++){
+            string tag = "#array" + to_string(i);
+            obj[tag] = Value(Array({1, "string", true, Null()}));
+        }
+        // 构造 Object
+        for(int i = 0; i < object_num_; i++){
+            string tag = "#object" + to_string(i);
+            obj[tag] = Value(Object({{"number", 1}, {"string", "hello"}, {"bool", false}, {"null", Null()}}));
+        }
+        // 构造 String
+        for(int i = 0; i < string_num_; i++){
+            string tag = "#string" + to_string(i);
+            obj[tag] = Value("Hello World!");
+        }
+        // 构造 Number
+        for(int i = 0; i < number_num_; i++){
+            string tag = "#number" + to_string(i);
+            obj[tag] = Value(31415);
+        }
+        // 构造 Boolean
+        for(int i = 0; i < bool_num_; i++){
+            string tag = "#bool" + to_string(i);
+            obj[tag] = Value(true);
+        }
+        string temp = parse(obj);
+    }
+    Log::print("[----------------------- Total time (ms) -----------------------]");
+    printLine(to_string(getTime()));
+    Log::print("[===============================================================]");
+}
+void tiny_json_performance::Performance::printLine(std::string str){
+    std::string blank((63 - str.size()) / 2, ' ');
+    if(str.size() % 2 == 0){
+        str = "|" + blank + str + blank + " |";
+    }else{
+        str = "|" + blank + str + blank + "|";
+    }
+    Log::print(str);
 }
 void tiny_json_performance::Performance::print(std::array<int, 6> arr){
     using namespace std;
