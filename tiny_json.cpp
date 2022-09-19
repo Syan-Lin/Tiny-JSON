@@ -16,6 +16,7 @@
 #include <fstream>
 
 bool tiny_json::JSON5 = false;
+bool tiny_json::FORMAT_CHECK = true;
 
 /**************************
 * @author   Yuan.
@@ -153,9 +154,6 @@ void tiny_json::removeAnnotation(std::string& str){
         }
     }
 }
-tiny_json::NullSingleton& tiny_json::Null(){
-    return *NullSingleton::instance();
-}
 
 /**************************
 * @author   Yuan.
@@ -247,7 +245,7 @@ void tiny_json::Object::initFromJSON(const std::string& str){
         Log::error("Object", "字符串 " + str + " 不能转化为 Object 对象!");
         return;
     }
-    if(parseable(temp, Type::kObject)){
+    if(FORMAT_CHECK || parseable(temp, Type::kObject)){
         std::string str_noblank = std::move(temp);
         removeBlank(str_noblank);
         std::vector<int> indexes;
@@ -304,85 +302,113 @@ void tiny_json::Object::initKV(const std::string& str){
 ***************************/
 
 // 拷贝控制成员
-tiny_json::Value::Value(): type_(Type::kNull), val_(NullSingleton::instance()){}
-tiny_json::Value::Value(const NullSingleton&): Value(){}
-tiny_json::Value::Value(const double val): type_(Type::kNumber), val_(std::make_shared<Number>(val)){}
-tiny_json::Value::Value(const int val): type_(Type::kNumber), val_(std::make_shared<Number>(val)){}
-tiny_json::Value::Value(const bool val): type_(Type::kBoolean), val_(std::make_shared<Boolean>(val)){}
-tiny_json::Value::Value(const char str[]): type_(Type::kString), val_(std::make_shared<String>(str)){}
-tiny_json::Value::Value(const std::string& str): type_(Type::kString), val_(std::make_shared<String>(str)){}
-tiny_json::Value::Value(std::initializer_list<kv> il): type_(Type::kObject), val_(std::make_shared<Object>(il)){}
-tiny_json::Value::Value(std::string&& str) noexcept {
-    initFromJSON(str);
+tiny_json::Value::Value(): type_(Type::kNull), null_val_(nullptr){}
+tiny_json::Value::Value(Null): type_(Type::kNull), null_val_(nullptr){}
+tiny_json::Value::Value(const double val): type_(Type::kNumber), num_val_(new Number(val)){}
+tiny_json::Value::Value(const int val): type_(Type::kNumber), num_val_(new Number(val)){}
+tiny_json::Value::Value(const bool val): type_(Type::kBoolean), bool_val_(val){}
+tiny_json::Value::Value(const char str[]): type_(Type::kString), str_val_(new String(str)){}
+tiny_json::Value::Value(const std::string& str): type_(Type::kString), str_val_(new String(str)){}
+tiny_json::Value::Value(std::initializer_list<kv> il): type_(Type::kObject), obj_val_(new Object(il)){}
+tiny_json::Value::Value(const Object& val): type_(Type::kObject), obj_val_(new Object(val)){}
+tiny_json::Value::Value(const Array& val): type_(Type::kArray), arr_val_(new Array(val)){}
+tiny_json::Value::Value(Object&& val) noexcept { type_ = Type::kObject; obj_val_ = new Object(val); }
+tiny_json::Value::Value(Array&& val) noexcept { type_ = Type::kArray; arr_val_ = new Array(val); }
+tiny_json::Value::Value(const Value& val): type_(val.type_){
+    switch(type_){
+        case Type::kString:     str_val_ = new String(*val.str_val_);   break;
+        case Type::kArray:      arr_val_ = new Array(*val.arr_val_);    break;
+        case Type::kObject:     obj_val_ = new Object(*val.obj_val_);   break;
+        case Type::kNumber:     num_val_ = new Number(*val.num_val_);   break;
+        case Type::kNull:       null_val_ = val.null_val_;              break;
+        case Type::kBoolean:    bool_val_ = val.bool_val_;              break;
+    }
 }
-
-tiny_json::Value::Value(const Object& val): type_(Type::kObject), val_(std::make_shared<Object>(val)){}
-tiny_json::Value::Value(const Array& val): type_(Type::kArray), val_(std::make_shared<Array>(val)){}
-tiny_json::Value::Value(Object&& val) noexcept {
-    type_ = Type::kObject;
-    val_ = std::make_shared<Object>(std::move(val));
-}
-tiny_json::Value::Value(Array&& val) noexcept {
-    type_ = Type::kArray;
-    val_ = std::make_shared<Array>(std::move(val));
-}
-tiny_json::Value::Value(const Value& val): type_(val.type_), val_(val.val_){}
 tiny_json::Value::Value(Value&& val) noexcept {
     type_ = val.type_;
-    val_ = std::move(val.val_);
+    switch(type_){
+        case Type::kString:     str_val_ = val.str_val_; val.str_val_ = nullptr;    break;
+        case Type::kArray:      arr_val_ = val.arr_val_; val.arr_val_ = nullptr;    break;
+        case Type::kObject:     obj_val_ = val.obj_val_; val.obj_val_ = nullptr;    break;
+        case Type::kNumber:     num_val_ = val.num_val_; val.num_val_ = nullptr;    break;
+        case Type::kNull:       null_val_ = val.null_val_;                          break;
+        case Type::kBoolean:    bool_val_ = val.bool_val_;                          break;
+    }
 }
+tiny_json::Value::Value(std::string&& val){ initFromJSON(val); }
+tiny_json::Value::~Value(){ reset(); }
+
 tiny_json::Value& tiny_json::Value::operator=(const Value& val){
+    if(&val == this){
+        return *this;
+    }
+    reset();
     type_ = val.type_;
-    val_ = val.val_;
+    switch(type_){
+        case Type::kString:     str_val_ = new String(*val.str_val_);   break;
+        case Type::kArray:      arr_val_ = new Array(*val.arr_val_);    break;
+        case Type::kObject:     obj_val_ = new Object(*val.obj_val_);   break;
+        case Type::kNumber:     num_val_ = new Number(*val.num_val_);   break;
+        case Type::kNull:       null_val_ = val.null_val_;              break;
+        case Type::kBoolean:    bool_val_ = val.bool_val_;              break;
+    }
     return *this;
 }
 tiny_json::Value& tiny_json::Value::operator=(Value&& val) noexcept {
+    reset();
     type_ = val.type_;
-    val_ = std::move(val.val_);
+    switch(type_){
+        case Type::kString:     str_val_ = val.str_val_; val.str_val_ = nullptr;    break;
+        case Type::kArray:      arr_val_ = val.arr_val_; val.arr_val_ = nullptr;    break;
+        case Type::kObject:     obj_val_ = val.obj_val_; val.obj_val_ = nullptr;    break;
+        case Type::kNumber:     num_val_ = val.num_val_; val.num_val_ = nullptr;    break;
+        case Type::kNull:       null_val_ = val.null_val_;                          break;
+        case Type::kBoolean:    bool_val_ = val.bool_val_;                          break;
+    }
     return *this;
 }
 tiny_json::Value& tiny_json::Value::operator=(const double val){
     if(type_ == Type::kNumber){
-        static_cast<Number&>(*val_) = val;
+        *num_val_ = val;
     }else{
+        reset();
         type_ = Type::kNumber;
-        val_ = std::make_shared<Number>(val);
+        num_val_ = new Number(val);
     }
     return *this;
 }
 tiny_json::Value& tiny_json::Value::operator=(const int val){
     if(type_ == Type::kNumber){
-        static_cast<Number&>(*val_) = val;
+        *num_val_ = val;
     }else{
+        reset();
         type_ = Type::kNumber;
-        val_ = std::make_shared<Number>(val);
+        num_val_ = new Number(val);
     }
     return *this;
 }
 tiny_json::Value& tiny_json::Value::operator=(const bool val){
-    if(type_ == Type::kBoolean){
-        static_cast<Boolean&>(*val_) = val;
-    }else{
+    if(type_ != Type::kBoolean){
         type_ = Type::kBoolean;
-        val_ = std::make_shared<Boolean>(val);
     }
+    bool_val_ = val;
     return *this;
 }
 tiny_json::Value& tiny_json::Value::operator=(const std::string& str){
     if(type_ == Type::kString){
-        static_cast<String&>(*val_) = str;
+        *str_val_ = str;
     }else{
+        reset();
         type_ = Type::kString;
-        val_ = std::make_shared<String>(str);
+        str_val_ = new String(str);
     }
     return *this;
 }
-tiny_json::Value& tiny_json::Value::operator=(const char str[]){
-    return operator=(std::string(str));
-}
+tiny_json::Value& tiny_json::Value::operator=(const char str[]){ return operator=(std::string(str)); }
+tiny_json::Value& tiny_json::Value::operator=(Null){ reset(); return *this; }
 tiny_json::Value& tiny_json::Value::operator[](const std::string& key){
     if(type_ == Type::kObject){
-        return static_cast<Object&>(*val_)[key];
+        return (*obj_val_)[key];
     }else{
         Log::error("Value", "非 Object 类型无法使用 [key]: " + parse());
     }
@@ -390,7 +416,7 @@ tiny_json::Value& tiny_json::Value::operator[](const std::string& key){
 }
 tiny_json::Value& tiny_json::Value::operator[](const size_t index){
     if(type_ == Type::kArray){
-        return static_cast<Array&>(*val_)[index];
+        return (*arr_val_)[index];
     }else{
         Log::error("Value", "非 Array 类型无法使用 [index]: " + parse());
     }
@@ -399,91 +425,94 @@ tiny_json::Value& tiny_json::Value::operator[](const size_t index){
 
 // 功能成员
 tiny_json::Type tiny_json::Value::getType() const { return type_; }
-tiny_json::Number& tiny_json::Value::getNumber(){
-    if(type_ != Type::kNumber){
-        Log::error("Value", "非 Number 类型无法使用 getNumber(): " + parse());
-    }
-    return static_cast<Number&>(*val_);
-}
 void tiny_json::Value::reset(){
+    switch(type_){
+        case Type::kString:     delete str_val_;    break;
+        case Type::kArray:      delete arr_val_;    break;
+        case Type::kObject:     delete obj_val_;    break;
+        case Type::kNumber:     delete num_val_;    break;
+    }
     type_ = Type::kNull;
-    val_ = NullSingleton::instance();
+    null_val_ = nullptr;
 }
 template<> double& tiny_json::Value::get<double>(){
     if(type_ != Type::kNumber){
         Log::error("Value", "返回类型不符合: " + parse());
     }
-    return static_cast<Number&>(*val_).getDouble();
+    return num_val_->getDouble();
 }
 template<> int& tiny_json::Value::get<int>(){
     if(type_ != Type::kNumber){
         Log::error("Value", "返回类型不符合: " + parse());
     }
-    return static_cast<Number&>(*val_).getInt();
+    return num_val_->getInt();
 }
 template<> bool& tiny_json::Value::get<bool>(){
     if(type_ != Type::kBoolean){
         Log::error("Value", "返回类型不符合: " + parse());
     }
-    return static_cast<Boolean&>(*val_).get();
+    return bool_val_;
 }
 template<> std::string& tiny_json::Value::get<std::string>(){
     if(type_ != Type::kString){
         Log::error("Value", "返回类型不符合: " + parse());
     }
-    return static_cast<String&>(*val_).get();
+    return str_val_->get();
 }
 template<> tiny_json::Array& tiny_json::Value::get<tiny_json::Array>(){
     if(type_ != Type::kArray){
         Log::error("Value", "返回类型不符合: " + parse());
     }
-    return static_cast<Array&>(*val_);
+    return *arr_val_;
 }
 template<> tiny_json::Object& tiny_json::Value::get<tiny_json::Object>(){
     if(type_ != Type::kObject){
         Log::error("Value", "返回类型不符合: " + parse());
     }
-    return static_cast<Object&>(*val_);
+    return *obj_val_;
 }
-bool tiny_json::Value::isNull(){
-    if(val_ == NullSingleton::instance()){
-        return true;
+void tiny_json::Value::parseSetting(NumberType type, size_t decimal_place){
+    if(type_ == Type::kNumber){
+        num_val_->parseSetting(type, decimal_place);
     }else{
-        return false;
+        Log::warning("Value", parse() + " 非 Number 类型，不能使用 parseSetting()");
     }
 }
 
 std::string tiny_json::Value::parse(){
-    if(val_ == nullptr){
-        Log::error("Value", "试图对空指针进行操作!");
-        return "";
+    switch(type_){
+        case Type::kString:     return str_val_->parse();
+        case Type::kArray:      return arr_val_->parse();
+        case Type::kObject:     return obj_val_->parse();
+        case Type::kNumber:     return num_val_->parse();
+        case Type::kNull:       return "null";
+        case Type::kBoolean:    return bool_val_ ? "true" : "false";
+        default:                return "";
     }
-    return val_->parse();
 }
 void tiny_json::Value::initFromJSON(const std::string& str){
     using namespace reg_ex;
     if(regex_match(str, kPatternNumber) || regex_match(str, kPatternHex)){
-        val_ = std::make_shared<Number>();
-        val_->initFromJSON(str);
+        num_val_ = new Number();
+        num_val_->initFromJSON(str);
         type_ = Type::kNumber;
     }else if(regex_match(str, kPatternString)){
-        val_ = std::make_shared<String>();
-        val_->initFromJSON(str);
+        str_val_ = new String();
+        str_val_->initFromJSON(str);
         type_ = Type::kString;
     }else if(regex_match(str, kPatternBool)){
-        val_ = std::make_shared<Boolean>();
-        val_->initFromJSON(str);
+        bool_val_ = (str == "true") ? true : false;
         type_ = Type::kBoolean;
     }else if(regex_match(str, kPatternNull)){
-        val_ = NullSingleton::instance();
+        null_val_ = nullptr;
         type_ = Type::kNull;
     }else if(regex_match(str, kPatternArray)){
-        val_ = std::make_shared<Array>();
-        val_->initFromJSON(str);
+        arr_val_ = new Array();
+        arr_val_->initFromJSON(str);
         type_ = Type::kArray;
     }else if(regex_match(str, kPatternObj)){
-        val_ = std::make_shared<Object>();
-        val_->initFromJSON(str);
+        obj_val_ = new Object();
+        obj_val_->initFromJSON(str);
         type_ = Type::kObject;
     }else{
         Log::error("Value", "字符串 " + str + " 不能转化为 Value 对象!");
@@ -529,6 +558,7 @@ tiny_json::Value& tiny_json::Array::get(size_t index){
 size_t tiny_json::Array::size() const { return arr_.size(); }
 void tiny_json::Array::clear(){ arr_.clear(); }
 void tiny_json::Array::append(const Value& val){ arr_.emplace_back(val); }
+void tiny_json::Array::append(Value&& val){ arr_.emplace_back(std::move(val)); }
 void tiny_json::Array::add(size_t index, const Value& val){
     if(checkIndexAdd(index)){
         arr_.emplace(arr_.begin() + index, val);
@@ -588,7 +618,7 @@ void tiny_json::Array::initFromJSON(const std::string& val){
         Log::error("Array", "字符串 " + val + " 不能转化为 Array 对象!");
         return;
     }
-    if(parseable(val, Type::kArray)){
+    if(FORMAT_CHECK || parseable(val, Type::kArray)){
         // 生成 Array
         // [..., ".[].,..", '.[].,..', ...]
         std::string str = val;
@@ -814,31 +844,6 @@ void tiny_json::Number::initFromJSON(const std::string& str){
 
 /**************************
 * @author   Yuan.
-* @date     2022/8/23
-* @brief    Null 类实现
-* @test     100%
-***************************/
-
-std::shared_ptr<tiny_json::NullSingleton> tiny_json::NullSingleton::instance_ = nullptr;
-
-// 拷贝控制成员
-std::shared_ptr<tiny_json::NullSingleton> tiny_json::NullSingleton::instance(){
-    if(instance_ == nullptr){
-        instance_ = std::shared_ptr<NullSingleton>(new NullSingleton());
-    }
-    return instance_;
-}
-
-// 功能成员
-std::string tiny_json::NullSingleton::parse(){ return "null"; }
-void tiny_json::NullSingleton::initFromJSON(const std::string& str){
-    if(!parseable(str, Type::kNull)){
-        Log::error("Null", "字符串 " + str + " 不能转化为 Null 对象!");
-    }
-}
-
-/**************************
-* @author   Yuan.
 * @date     2022/8/24
 * @brief    String 类实现
 * @test     100%
@@ -888,7 +893,7 @@ std::string tiny_json::String::parse() {
     }
     if(is_parsed_){
         return parsed_str_;
-    }else if(!parseableString(str)){
+    }else if(!FORMAT_CHECK && !parseableString(str)){
         Log::error("String", "字符串 " + str + " 不能转化为 String 对象!");
         return "\"\"";
     }
@@ -1002,7 +1007,7 @@ void tiny_json::String::parseForJSON(){
     }
 }
 void tiny_json::String::initFromJSON(const std::string& str){
-    if(!parseableString(str)){
+    if(!FORMAT_CHECK && !parseableString(str)){
         Log::error("String", "字符串 " + str + " 不能转化为 String 对象!");
         return;
     }
@@ -1023,35 +1028,6 @@ void tiny_json::String::initFromJSON(const std::string& str){
     str_ = temp;
     is_parsed_ = false;
     parse();
-}
-
-/**************************
-* @author   Yuan.
-* @date     2022/8/23
-* @brief    Boolean 类实现
-* @test     100%
-***************************/
-
-// 拷贝控制成员
-tiny_json::Boolean::Boolean(const bool val): bool_(val) {}
-tiny_json::Boolean::Boolean(const Boolean& val): bool_(val.bool_){}
-tiny_json::Boolean::Boolean(Boolean&& val) noexcept : bool_(std::move(val.bool_)){}
-tiny_json::Boolean& tiny_json::Boolean::operator=(const bool val){
-    bool_ = val;
-    return *this;
-}
-
-// 功能成员
-bool& tiny_json::Boolean::get(){ return bool_; }
-std::string tiny_json::Boolean::parse(){
-    return bool_ ? "true" : "false";
-}
-void tiny_json::Boolean::initFromJSON(const std::string& str){
-    if(!parseable(str, Type::kBoolean)){
-        Log::error("Boolean", "字符串 " + str + " 不能转化为 Boolean 对象!");
-        return;
-    }
-    bool_ = (str == "true") ? true : false;
 }
 
 /**************************

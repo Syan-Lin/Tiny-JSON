@@ -1,7 +1,6 @@
 #pragma once
 
 #include <iostream>
-#include <memory>
 #include <map>
 #include <vector>
 #include <regex>
@@ -14,15 +13,16 @@ using namespace tiny_json_log;
 // 输出是否使用 JSON5 标准
 // 注意事项：JSON5 下字符串请一律使用单引号包裹，且字符串中单引号需要转义
 extern bool JSON5;
+// 检查 JSON 格式错误，关闭会有更好的性能表现，开启则会自动执行格式检查
+extern bool FORMAT_CHECK;
 
 // JSON 数据类型
 class Value;
 class Object;
 class Array;
 class Number;
-class NullSingleton;
 class String;
-class Boolean;
+typedef decltype(nullptr) Null;
 
 // JSON 数据类型枚举
 enum class Type{
@@ -65,13 +65,16 @@ public:
 // 可以是 Number、Boolean、String、Null、Object、Array
 class Value : public Parseable{
     typedef std::pair<std::string, Value> kv;
+    typedef bool Boolean;
+    typedef decltype(nullptr) Null;
+
     friend class Object;
     friend class Array;
 public:
     // 拷贝控制成员
     Value();
     Value(const Object&);
-    Value(const NullSingleton&);
+    Value(Null);
     Value(Object&&) noexcept;
     Value(const Array&);
     Value(Array&&) noexcept;
@@ -88,22 +91,21 @@ public:
     Value& operator=(const double);
     Value& operator=(const int);
     Value& operator=(const bool);
+    Value& operator=(Null);
     Value& operator=(const std::string&);
     Value& operator=(const char[]);
     Value& operator[](const std::string&);
     Value& operator[](const size_t);
-    ~Value() = default;
+    ~Value();
 
     // 获取值类型
     Type getType() const;
     // 获取值
     template<typename T> T& get();
-    // 获取数值类型，数值格式相关
-    Number& getNumber();
     // 重置值为 Null
     void reset();
-    // 判断是否为空
-    bool isNull();
+    // 设置数字输出格式，当类型为 kInteger 或 kHex 时，第二个参数没有作用
+    void parseSetting(NumberType, size_t = 6);
 
     // 将值输出为字符串
     std::string parse() override;
@@ -111,9 +113,16 @@ public:
     void initFromJSON(const std::string&) override;
 
 private:
-    explicit Value(std::string&&) noexcept;     // 字符串初始化 Value 对象
+    explicit Value(std::string&&);
     Type type_;
-    std::shared_ptr<Parseable> val_;
+    union{
+        Null null_val_;
+        Boolean bool_val_;
+        Number* num_val_;
+        String* str_val_;
+        Array* arr_val_;
+        Object* obj_val_;
+    };
 };
 
 // JSON 的键值对集合
@@ -173,6 +182,7 @@ public:
 
     // 在尾部添加元素
     void append(const Value&);
+    void append(Value&&);
     // 在指定位置之前添加元素
     void add(size_t, const Value&);
     // 删除指定位置的元素
@@ -236,23 +246,6 @@ private:
     size_t decimal_place_ = 6;
 };
 
-// 空类型，全局共用一个 Null 对象
-extern NullSingleton& Null();
-class NullSingleton : public Parseable{
-public:
-    static std::shared_ptr<NullSingleton> instance();
-    // 拷贝控制成员
-    ~NullSingleton() = default;
-
-    // 输出 Null 字符串
-    std::string parse() override;
-    // 用字符串初始化对象
-    void initFromJSON(const std::string&) override;
-private:
-    static std::shared_ptr<NullSingleton> instance_;
-    NullSingleton() = default;
-};
-
 // 字符串类型
 // 特殊字符需要转义: \\n、\\t、\\r、\\u、\\、\"
 // 换行 TODO
@@ -287,27 +280,6 @@ private:
     bool is_parsed_ = false;
     void parseForPrint();
     void parseForJSON();
-};
-
-// 布尔类型
-class Boolean : public Parseable{
-public:
-    // 拷贝控制成员
-    Boolean() = default;
-    Boolean(const bool);
-    Boolean(const Boolean&);
-    Boolean(Boolean&&) noexcept;
-    Boolean& operator=(const bool);
-    ~Boolean() = default;
-
-    bool& get();
-    // 将布尔值输出为字符串
-    std::string parse() override;
-    // 用字符串初始化对象
-    void initFromJSON(const std::string&) override;
-
-private:
-    bool bool_ = false;
 };
 
 // 将对象转化为字符串，是否进行格式化，默认为是

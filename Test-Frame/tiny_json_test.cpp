@@ -210,13 +210,13 @@ void ArrayTest(){
     a7.append(false);
     a7.append(3.14);
     a7.append(3);
-    a7.append(Null());
+    a7.append(nullptr);
     EXPECT_INT(test, 9, a7.size());
     EXPECT_STRING(test, "[6.28, true, 3, 5, \"hello\", false, 3.14, 3, null]", a7.parse());
     a7.clear();
     EXPECT_INT(test, 0, a7.size());
     EXPECT_STRING(test, "[]", a7.parse());
-    a7.add(0, Null());
+    a7.add(0, nullptr);
     a7.add(1, Value(false));
     a7.add(2, "abc");
     a7.add(2, true);
@@ -224,7 +224,7 @@ void ArrayTest(){
     a7.add(5, 6.3);
     EXPECT_INT(test, 6, a7.size());
     EXPECT_STRING(test, "[null, false, true, \"abc\", 4, 6.3]", a7.parse());
-    a7[1] = Null();
+    a7[1] = nullptr;
     a7[0] = 1;
     a7[2] = 1.1;
     a7[3] = true;
@@ -278,10 +278,10 @@ void ValueTest(){
     Object temp;
     temp.initFromJSON("{\"num\": 2.2}");
     Value v6(o);                    // Value(Object&)
-    Value v6_(move(temp));             // Value(Object&&)
+    Value v6_(move(temp));          // Value(Object&&)
     Value v7(v2);                   // Value(Value&) 等价于 Value v8 = v2
     Value v8(move(Value(true)));    // Value(Value&&) 等价于 Value v7 = Value(true)
-    Value v9 = Null();
+    Value v9 = nullptr;
     EXPECT_TRUE(test, v1.getType() == Type::kNull);
     EXPECT_STRING(test, "null", v1.parse());
     EXPECT_TRUE(test, v2.getType() == Type::kNumber);
@@ -374,7 +374,7 @@ void ValueTest(){
     t1 = Object({{"hello", 123}});
     t2 = Array({1, 2, 3});
     t3 = 1;
-    t4 = Null();
+    t4 = nullptr;
     t5 = true;
     t6 = "10";
     EXPECT_TRUE(test, t1.getType() == Type::kObject);
@@ -396,7 +396,6 @@ void ValueTest(){
     EXPECT_STRING(test, "[1, 2, 3]", t2.get<Array>().parse());
     EXPECT_INT(test, 1, t2[0].get<int>());
     EXPECT_INT(test, 1, t3.get<int>());
-    EXPECT_TRUE(test, t3.getNumber().getType() == NumberType::kInteger);
     EXPECT_STRING(test, "null", t4.parse());
     EXPECT_TRUE(test, t5.get<bool>());
     EXPECT_STRING(test, "10", t6.get<string>());
@@ -653,21 +652,6 @@ void NumberTest(){
     // n5.initFromJSON("");
 }
 
-// Null 类测试，覆盖率 100%
-void NullTest(){
-    Test test("NullTest");
-
-    // 初始化
-    auto n = NullSingleton::instance();
-    n->initFromJSON("null");
-    EXPECT_STRING(test, "null", n->parse());
-
-    // 错误测试
-    // NullSingleton& n2 = NullSingleton::instance();
-    // n2->initFromJSON("abc");     // 无法转成 Null 对象
-    // n2->initFromJSON("");        // 无法转成 Null 对象
-}
-
 // String 类测试，覆盖率 100%
 void StringTest(){
     Test test("StringTest");
@@ -739,47 +723,6 @@ void StringTest(){
     // assert(e.getJSON() == "\"\"");
     // assert(e.parse() == "\"\"");
     // assert(e.getJSON() == "\"\"");
-}
-
-// Boolean 类测试，覆盖率 100%
-void BooleanTest(){
-    Test test("BooleanTest");
-
-    // 初始化
-    Boolean b1;                     // 默认为 false
-    Boolean b2 = true, b2_ = false; // Boolean(bool)
-    Boolean b3, b3_;
-    Boolean b4(b2), b4_(b2_);       // Boolean(Boolean&)
-    b3.initFromJSON("true");        // 字符串初始化
-    b3_.initFromJSON("false");      // 字符串初始化
-    EXPECT_FALSE(test, b1.get());
-    EXPECT_TRUE(test, b2.get());
-    EXPECT_TRUE(test, b3.get());
-    EXPECT_TRUE(test, b4.get());
-    EXPECT_FALSE(test, b2_.get());
-    EXPECT_FALSE(test, b3_.get());
-    EXPECT_FALSE(test, b4_.get());
-    EXPECT_STRING(test, "false", b1.parse());
-    EXPECT_STRING(test, "true", b2.parse());
-    EXPECT_STRING(test, "true", b3.parse());
-    EXPECT_STRING(test, "true", b4.parse());
-    EXPECT_STRING(test, "false", b2_.parse());
-    EXPECT_STRING(test, "false", b3_.parse());
-    EXPECT_STRING(test, "false", b4_.parse());
-
-    // 赋值
-    Boolean b5, b6;
-    b5 = true;
-    b6 = false;
-    EXPECT_TRUE(test, b5.get());
-    EXPECT_STRING(test, "true", b5.parse());
-    EXPECT_FALSE(test, b6.get());
-    EXPECT_STRING(test, "false", b6.parse());
-
-    // 错误测试
-    // Boolean e;
-    // e.initFromJSON("abc");      // "abc" 无法转化为 Boolean 对象
-    // e.initFromJSON("");         // "" 无法转化为 Boolean 对象
 }
 
 // String JSON5 测试
@@ -865,23 +808,28 @@ void JSON5Test(){
 
 void PerformanceTest(){
     Performance pt;
-    pt.setScale(100000, Type::kObject);
+    pt.setScale(10000);
+    // pt.setScale(10, Type::kNull);
+    // pt.setScale(20, Type::kNumber);
+    // pt.setScale(50, Type::kObject);
+    // pt.setScale(50, Type::kString);
+    // pt.setScale(10, Type::kBoolean);
+    // pt.setScale(20, Type::kArray);
+    // pt.runLoop(1);
     pt.run();
 }
 
 int main(){
-    tiny_json_test::Test::show_details_ = true;
+    tiny_json_test::Test::show_details_ = false;
 
     JSON5 = false;
     NumberTest();
-    BooleanTest();
     StringTest();
-    NullTest();
     ValueTest();
     ArrayTest();
     ObjectTest();
     RegExTest();
-    FuncTest();
+    // FuncTest();
 
     // JSON5 测试
     JSON5 = true;
@@ -889,7 +837,7 @@ int main(){
     ObjectJSON5Test();
     ArrayJSON5Test();
     AnnotationTest();
-    JSON5Test();
+    // JSON5Test();
 
     // 性能测试
     JSON5 = false;
