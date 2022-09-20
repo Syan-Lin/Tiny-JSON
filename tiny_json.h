@@ -1,7 +1,7 @@
 #pragma once
 
 #include <iostream>
-#include <map>
+#include <unordered_map>
 #include <vector>
 #include <regex>
 #include "Test-Frame/tiny_json_frame.h"
@@ -78,7 +78,7 @@ public:
     Value(Object&&) noexcept;
     Value(const Array&);
     Value(Array&&) noexcept;
-    Value(std::initializer_list<kv>);
+    Value(std::initializer_list<kv>);    // Object 初始化
     Value(const double);                 // Number 初始化
     Value(const int);                    // Number 初始化
     Value(const bool);                   // Boolean 初始化
@@ -128,7 +128,7 @@ private:
 // JSON 的键值对集合
 class Object : public Parseable{
     typedef std::string Key;
-    typedef std::map<std::string, Value> kvMap;
+    typedef std::unordered_map<std::string, Value> kvMap;
     typedef std::pair<std::string, Value> kv;
 public:
     // 拷贝控制成员
@@ -154,6 +154,8 @@ public:
     size_t size();
     // 清空键值对集合
     void clear();
+    // 设置哈希表槽数
+    void rehash(size_t);
 
     // 将键值对集合输出为字符串
     std::string parse() override;
@@ -172,7 +174,8 @@ class Array : public Parseable{
 public:
     // 拷贝控制成员
     Array() = default;
-    Array(std::initializer_list<Value>);    // 列表初始化
+    // Array(std::initializer_list<Value>); // 列表初始化
+    Array(Vector&&);                        // 列表初始化
     Array(const Array&);                    // 拷贝构造
     Array(Array&&) noexcept;                // 移动构造
     Array& operator=(const Array&);         // 拷贝赋值

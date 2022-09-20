@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <regex>
 #include <Windows.h>
+#include <map>
 #include "../tiny_json.h"
 #include "tiny_json_performance.h"
 
@@ -105,7 +106,7 @@ void ObjectTest(){
     EXPECT_INT(test, 0, o3.size());
     EXPECT_STRING(test, "{}", o3.parse());
     EXPECT_INT(test, 3, o3_.size());
-    EXPECT_STRING(test, R"({"array": [1, 2, 3], "key": 1432, "obj": {"hh": true, "inside": "obj"}})", o3_.parse());
+    EXPECT_STRING(test, R"({"obj": {"hh": true, "inside": "obj"}, "key": 1432, "array": [1, 2, 3]})", o3_.parse());
 
     // 赋值
     o3 = o1;        // operator=(Object&)
@@ -120,7 +121,7 @@ void ObjectTest(){
     EXPECT_INT(test, 1, o1.size());
     EXPECT_STRING(test, "{\"number\": 5}", o1.parse());
     EXPECT_INT(test, 3, o3_.size());
-    EXPECT_STRING(test, R"({"array": [1, 2, 5], "key": 1432, "obj": {"hh": true, "inside": "obj"}})", o3_.parse());
+    EXPECT_STRING(test, R"({"obj": {"hh": true, "inside": "obj"}, "key": 1432, "array": [1, 2, 5]})", o3_.parse());
     EXPECT_INT(test, 1, o3.size());
     EXPECT_STRING(test, R"({"test": {"hh": true, "inside": "obj"}})", o3.parse());
 
@@ -158,9 +159,7 @@ void ObjectTest(){
     Object o4;
     o4.initFromJSON(json);
     EXPECT_INT(test, 6, o4.size());
-    EXPECT_STRING(test, "{\"array\": [1, \"string\", false, [\"peter\", \"bob\"], "
-    "{\"age\": 16, \"name\": \"[Anna]\"}], \"bool\": true, \"float\": 1.1, \"integer\": 1, "
-    "\"object\": {\"age\": 16, \"name\": \"Anna\"}, \"string\": \"Hello \\\"World!'\"}", o4.parse());
+    EXPECT_STRING(test, R"({"object": {"age": 16, "name": "Anna"}, "array": [1, "string", false, ["peter", "bob"], {"age": 16, "name": "[Anna]"}], "bool": true, "string": "Hello \"World!'", "integer": 1, "float": 1.1})", o4.parse());
 
     // 错误测试
     // o4.remove("hhh");
@@ -790,8 +789,8 @@ void AnnotationTest(){
     removeAnnotation(str);
     Object obj2;
     obj2.initFromJSON(str);
-    EXPECT_STRING(test, "{bool: false, data: 123, info: 'GWB //this shall not be removed'}", obj.parse());
-    EXPECT_STRING(test, "{bool: false, data: 123, info: 'GWB //this shall not be removed'}", obj2.parse());
+    EXPECT_STRING(test, "{data: 123, bool: false, info: 'GWB //this shall not be removed'}", obj.parse());
+    EXPECT_STRING(test, "{data: 123, bool: false, info: 'GWB //this shall not be removed'}", obj2.parse());
 }
 
 // JSON5 混合测试
@@ -808,22 +807,18 @@ void JSON5Test(){
 
 void PerformanceTest(){
     Performance pt;
-    pt.setScale(10);
-    pt.run();
     pt.setScale(100);
-    pt.run();
+    pt.writeBenchmark();
+    pt.readBenchmark();
     pt.setScale(1000);
-    pt.run();
+    pt.writeBenchmark();
+    pt.readBenchmark();
+    pt.classBenchmark();
     pt.setScale(10000);
-    pt.run();
-    // pt.setScale(10000);
-    // pt.setScale(10, Type::kNull);
-    // pt.setScale(20, Type::kNumber);
-    // pt.setScale(50, Type::kObject);
-    // pt.setScale(50, Type::kString);
-    // pt.setScale(10, Type::kBoolean);
-    // pt.setScale(20, Type::kArray);
-    // pt.runLoop(1);
+    pt.writeBenchmark();
+    pt.classBenchmark();
+    pt.setScale(100000);
+    pt.classBenchmark();
     pt.setScale(10, Type::kNull);
     pt.setScale(20, Type::kNumber);
     pt.setScale(50, Type::kObject);
@@ -832,6 +827,7 @@ void PerformanceTest(){
     pt.setScale(20, Type::kArray);
     pt.runLoop(100);
     pt.runLoop(1000);
+    pt.runLoop(10000);
 }
 
 int main(){

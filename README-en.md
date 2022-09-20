@@ -1,5 +1,5 @@
 # Tiny-JSON
-![](https://img.shields.io/badge/c%2B%2B-11-blue) ![](https://img.shields.io/badge/release-v1.1-blue) ![](https://img.shields.io/badge/coverage-100%25-green) ![](https://img.shields.io/badge/license-mit-blue)
+![](https://img.shields.io/badge/c%2B%2B-11-blue) ![](https://img.shields.io/badge/release-v1.2-blue) ![](https://img.shields.io/badge/coverage-100%25-green) ![](https://img.shields.io/badge/license-mit-blue)
 
 ### Introduction
 Tiny-JSON is a light-weight JSON liberary implemented by C++11, only one head file needed to import projects. The coding style refers to Google C++ Style Guide, and have rich annotations, no third party dependency.
@@ -91,33 +91,46 @@ Test cases defined below:
 ```
 [===============================================================]
 [--------------- Run tiny_json performance test ----------------]
+[----------------------- Read benchmark ------------------------]
 |     Null  |  Array  |  Object |  String | Number  | Boolean   |
-[----------------------- scale of types ------------------------]
+[---------------- Scale of types in one object -----------------]
 |    100    |  100    |  100    |  100    |  100    |  100      |
-[--------------------- construct time (ms) ---------------------]
-|    0      |  0      |  0      |  0      |  0      |  0        |
-[----------------------- parse time (ms) -----------------------]
-|                              16                               |
+[------------------------ Read JSON (ms) -----------------------]
+|                     str_size: 22542, 16ms                     |
 [===============================================================]
+
 [===============================================================]
 [--------------- Run tiny_json performance test ----------------]
+[----------------------- Write benchmark -----------------------]
 |     Null  |  Array  |  Object |  String | Number  | Boolean   |
-[----------------------- scale of types ------------------------]
+[---------------- Scale of types in one object -----------------]
 |    1000   |  1000   |  1000   |  1000   |  1000   |  1000     |
-[--------------------- construct time (ms) ---------------------]
-|    79     |  62     |  0      |  0      |  16     |  0        |
-[----------------------- parse time (ms) -----------------------]
-|                              31                               |
+[----------------------- Write JSON (ms) -----------------------]
+|                    str_size: 231342, 16ms                     |
 [===============================================================]
+
+[===============================================================]
+[--------------- Run tiny_json performance test ----------------]
+[---------------------- Class benchmark ------------------------]
+|     Null  |  Array  |  Object |  String | Number  | Boolean   |
+[---------------- Scale of types in one object -----------------]
+|    100000 |  100000 |  100000 |  100000 |  100000 |  100000   |
+[--------------------- Construct time (ms) ---------------------]
+|    62     |  219    |  485    |  125    |  62     |  47       |
+[--------------------- Destruct time (ms) ----------------------]
+|    78     |  78     |  125    |  63     |  62     |  63       |
+[===============================================================]
+
 [===============================================================]
 [--------------- Run tiny_json performance test ----------------]
 |     Null  |  Array  |  Object |  String | Number  | Boolean   |
-[----------------------- scale of types ------------------------]
-|    10000  |  10000  |  10000  |  10000  |  10000  |  10000    |
-[--------------------- construct time (ms) ---------------------]
-|    688    |  891    |  125    |  46     |  16     |  31       |
-[----------------------- parse time (ms) -----------------------]
-|                             7250                              |
+[---------------- Scale of types in one object -----------------]
+|    10     |  20     |  50     |  50     |  20     |  10       |
+[---------------------------- Loops ----------------------------]
+|                             10000                             |
+[--------------------- Construct time (ms) ---------------------]
+[--------------------- Includes write JSON ---------------------]
+|                             7281                              |
 [===============================================================]
 ```
 
@@ -127,5 +140,6 @@ Test cases defined below:
 ### TODO
 - [x] JSON5 fully supported
 - [x] Test frame
-- [ ] Normal pointer version
-- [ ] Optimize performance
+- [x] Normal pointer version
+- [x] Optimize class performance
+- [ ] Optimize read performance

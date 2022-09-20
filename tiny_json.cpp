@@ -207,6 +207,7 @@ void tiny_json::Object::clear(){
     kv_map_.clear();
 }
 size_t tiny_json::Object::size(){ return kv_map_.size(); }
+void tiny_json::Object::rehash(size_t size){ kv_map_.rehash(size); }
 
 std::string tiny_json::Object::parse(){
     std::string result;
@@ -528,10 +529,13 @@ void tiny_json::Value::initFromJSON(const std::string& str){
 ***************************/
 
 // 拷贝控制成员
-tiny_json::Array::Array(std::initializer_list<Value> il){
-    for(auto beg = il.begin(); beg != il.end(); ++beg){
-        this->append(*beg);
-    }
+// tiny_json::Array::Array(std::initializer_list<Value> il){
+//     for(auto beg = il.begin(); beg != il.end(); ++beg){
+//         this->append(*beg);
+//     }
+// }
+tiny_json::Array::Array(Vector&& val){
+    arr_ = std::move(val);
 }
 tiny_json::Array::Array(const Array& val){
     arr_ = val.arr_;

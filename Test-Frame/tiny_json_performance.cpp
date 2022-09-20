@@ -145,7 +145,7 @@ void tiny_json_performance::Performance::writeBenchmark(){
     Log::print("[----------------------- Write JSON (ms) -----------------------]");
     getTime();
     string temp = parse(obj);
-    printLine(to_string(getTime()));
+    printLine("str_size: " + to_string(temp.size()) + ", " + to_string(getTime()) + "ms");
     Log::print("[===============================================================]\n");
 }
 void tiny_json_performance::Performance::classBenchmark(){
