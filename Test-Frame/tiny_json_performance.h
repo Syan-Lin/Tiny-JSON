@@ -12,7 +12,9 @@ class Performance{
 public:
     void setScale(int, Type);
     void setScale(int);
-    void run();
+    void classBenchmark();
+    void readBenchmark();
+    void writeBenchmark();
     void runLoop(int);
     DWORD getTime();
 private:
