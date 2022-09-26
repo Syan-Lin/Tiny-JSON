@@ -269,8 +269,6 @@ public:
     // 获取字符串，注意如果获得引用，修改字符串的值不可带有转义字符
     // 如果需要带有转义字符，请使用其他设置字符串的接口
     std::string& get();
-    // 获取 JSON 字符串
-    std::string getJSON();
 
     // 输出字符串
     std::string parse() override;
@@ -279,10 +277,6 @@ public:
 
 private:
     std::string str_;
-    std::string parsed_str_;
-    bool is_parsed_ = false;
-    void parseForPrint();
-    void parseForJSON();
 };
 
 // 将对象转化为字符串，是否进行格式化，默认为是

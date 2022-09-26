@@ -591,7 +591,7 @@ void NumberTest(){
         s4.initFromJSON("1.");
         s5.initFromJSON("0xa");
         s6.initFromJSON("1.1e2");
-        EXPECT_TRUE(test, s1.getType() == NumberType::kDefault);
+        EXPECT_TRUE(test, s1.getType() == NumberType::kInteger);
         EXPECT_INT(test, 1, s1.getInt());
         EXPECT_STRING(test, "1", s1.parse());
         EXPECT_TRUE(test, s2.getType() == NumberType::kDefault);
@@ -600,13 +600,13 @@ void NumberTest(){
         EXPECT_TRUE(test, s3.getType() == NumberType::kDefault);
         EXPECT_DOUBLE(test, 0.1, s3.getDouble());
         EXPECT_STRING(test, "0.1", s3.parse());
-        EXPECT_TRUE(test, s4.getType() == NumberType::kDefault);
+        EXPECT_TRUE(test, s4.getType() == NumberType::kInteger);
         EXPECT_INT(test, 1, s4.getInt());
         EXPECT_STRING(test, "1", s4.parse());
         EXPECT_TRUE(test, s5.getType() == NumberType::kHex);
         EXPECT_INT(test, 10, s5.getInt());
         EXPECT_STRING(test, "0xa", s5.parse());
-        EXPECT_TRUE(test, s6.getType() == NumberType::kDefault);
+        EXPECT_TRUE(test, s6.getType() == NumberType::kInteger);
         EXPECT_INT(test, 110, s6.getInt());
         EXPECT_STRING(test, "110", s6.parse());
     }
@@ -618,7 +618,7 @@ void NumberTest(){
         s4.initFromJSON("-1.");
         s5.initFromJSON("-0xa");
         s6.initFromJSON("-1.1e2");
-        EXPECT_TRUE(test, s1.getType() == NumberType::kDefault);
+        EXPECT_TRUE(test, s1.getType() == NumberType::kInteger);
         EXPECT_INT(test, -1, s1.getInt());
         EXPECT_STRING(test, "-1", s1.parse());
         EXPECT_TRUE(test, s2.getType() == NumberType::kDefault);
@@ -627,13 +627,13 @@ void NumberTest(){
         EXPECT_TRUE(test, s3.getType() == NumberType::kDefault);
         EXPECT_DOUBLE(test, -0.1, s3.getDouble());
         EXPECT_STRING(test, "-0.1", s3.parse());
-        EXPECT_TRUE(test, s4.getType() == NumberType::kDefault);
+        EXPECT_TRUE(test, s4.getType() == NumberType::kInteger);
         EXPECT_INT(test, -1, s4.getInt());
         EXPECT_STRING(test, "-1", s4.parse());
-        EXPECT_TRUE(test, s5.getType() == NumberType::kDefault);
+        EXPECT_TRUE(test, s5.getType() == NumberType::kInteger);
         EXPECT_INT(test, -10, s5.getInt());
         EXPECT_STRING(test, "-10", s5.parse());
-        EXPECT_TRUE(test, s6.getType() == NumberType::kDefault);
+        EXPECT_TRUE(test, s6.getType() == NumberType::kInteger);
         EXPECT_INT(test, -110, s6.getInt());
         EXPECT_STRING(test, "-110", s6.parse());
     }
@@ -778,9 +778,9 @@ void AnnotationTest(){
             "\tThis is a cross Annotation\n"
             "\tThis is a cross Annotation\n"
             "*/\n"
-            "\"bool\": false,\n"
-            "\"info\": \"GWB //this shall not be removed\",  // This is an Annotation\n"
-            "\"data\": 123 // This is an Annotation\n"
+            "bool: false,\n"
+            "info: 'GWB //this shall not be removed',  // This is an Annotation\n"
+            "data: 123 // This is an Annotation\n"
             "}"
     );
     // 只有在 parse 函数中才能去除注释
