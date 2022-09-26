@@ -49,22 +49,22 @@ bool tiny_json::parseable(const std::string& str, tiny_json::Type type){
     if(!tiny_json::FORMAT_CHECK) return true;
     using namespace tiny_json;
     switch(type){
-        case Type::kValue:
-            return parseable(str, Type::kNumber) || parseable(str, Type::kString)
-                || parseable(str, Type::kBoolean) || parseable(str, Type::kNull)
-                || parseable(str, Type::kObject) || parseable(str, Type::kArray);
-        case Type::kNumber:
-            return parseableNumber(str);
-        case Type::kNull:
-            return str == "null" ? true : false;
-        case Type::kString:
-            return parseableString(str);
         case Type::kBoolean:
             return (str == "true" || str == "false") ? true : false;
+        case Type::kNull:
+            return str == "null" ? true : false;
+        case Type::kNumber:
+            return parseableNumber(str);
+        case Type::kString:
+            return parseableString(str);
         case Type::kArray:
             return parseableArray(str);
         case Type::kObject:
             return parseableObject(str);
+        case Type::kValue:
+            return parseable(str, Type::kNumber) || parseable(str, Type::kString)
+                || parseable(str, Type::kBoolean) || parseable(str, Type::kNull)
+                || parseable(str, Type::kObject) || parseable(str, Type::kArray);
     }
     return false;
 }
@@ -76,16 +76,13 @@ std::string tiny_json::parse(Object& obj, bool form){
     }
     return result;
 }
-tiny_json::Object tiny_json::parse(const std::string& str){
-    Object o;
+tiny_json::Object tiny_json::parse(std::string& str){
+    Object obj;
     if(JSON5){
-        std::string temp = str;
-        removeAnnotation(temp);
-        o.initFromJSON(temp);
-    }else{
-        o.initFromJSON(str);
+        removeAnnotation(str);
     }
-    return o;
+    obj.initFromJSON(str);
+    return obj;
 }
 tiny_json::Object tiny_json::readFile(const std::string& path){
     std::ifstream file;
@@ -112,45 +109,44 @@ void tiny_json::writeFile(const std::string& path, const std::string& json){
     ofs.close();
 }
 void tiny_json::removeAnnotation(std::string& str){
-    bool isAnno = false;
-    bool isCrossAnno = false;
-    int num_d = 0, num_s = 0;
+    bool is_annotation = false, is_block_annotation = false;
+    bool in_double = false, in_single = false;
     for(int i = 0; i < str.size(); i++){
-        if(isAnno){
-            if(str[i] == '\n'){
-                isAnno = false;
+        if(is_annotation){
+            while(str[i] != '\n'){
+                str.erase(i, 1);
             }
             str.erase(i, 1);
-            i--;
-            continue;
-        }else if(isCrossAnno){
-            if(i < str.size() && str[i+1] == '/' && str[i] == '*'){
-                isCrossAnno = false;
-                str.erase(i, 2);
-                continue;
+            is_annotation = false;
+        }else if(is_block_annotation){
+            while(i + 1 < str.size()){
+                if(str[i+1] == '/' && str[i] == '*'){
+                    str.erase(i, 2);
+                    break;
+                }else{
+                    str.erase(i, 1);
+                }
             }
-            str.erase(i, 1);
-            i--;
-            continue;
+            is_block_annotation = false;
         }
-        if(num_d == 0 && str[i] == '"'){
-            num_d++;
-        }else if(num_s == 0 && str[i] == '\''){
-            num_s++;
-        }else if(i > 0 && num_d > 0 && str[i] == '"' && str[i-1] != '\\'){
-            // 处于双引号中
-            num_d--;
-        }else if(i > 0 && num_s > 0 && str[i] == '\'' && str[i-1] != '\\'){
-            // 处于单引号中
-            num_s--;
+        if(!in_double && !in_single){
+            if(str[i] == '"'){
+                in_double = true;
+            }else if(str[i] == '\''){
+                in_single = true;
+            }
+        }else if(in_double && str[i] == '"' && str[i-1] != '\\'){
+            in_double = false;
+        }else if(in_single && str[i] == '\'' && str[i-1] != '\\'){
+            in_single = false;
         }
-        if(num_d == 0 && num_s == 0 && i > 0){
+        if(!in_double && !in_single && i > 0){
             if(str[i] == '/' && str[i-1] == '/'){
-                i = i - 2;
-                isAnno = true;
+                i -= 2;
+                is_annotation = true;
             }else if(str[i] == '*' && str[i-1] == '/'){
-                i = i - 2;
-                isCrossAnno = true;
+                i -= 2;
+                is_block_annotation = true;
             }
         }
     }
