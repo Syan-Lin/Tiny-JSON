@@ -9,6 +9,7 @@ Tiny-JSON is a light-weight JSON liberary implemented by C++11, only one head fi
 ### Features
 - Read JSON file and parse to C++ objects
 - Use C++ objects to generate JSON file
+- Highly readable code
 - Support JSON5
 - Extremly easy used
 
@@ -81,7 +82,7 @@ Test failed!
 #### Performance tests
 Performance tests are defined in `tiny_json_performance.h`, which could set the scale of types separately to see its actual performance.
 
-Test cases defined below:
+Test cases defined below, tested in CPU i5-12600KF:
 - Null: `{ "#nullx": null }`
 - Array: `{ "#arrayx": [1, "string", true, null] }`
 - Object: `{ "#objectx": {{"number", 1}, {"string", "hello"}, {"bool", false}, {"null", null}} }`
@@ -91,22 +92,22 @@ Test cases defined below:
 ```
 [===============================================================]
 [--------------- Run tiny_json performance test ----------------]
-[----------------------- Read benchmark ------------------------]
+[----------------------- Write benchmark -----------------------]
 |     Null  |  Array  |  Object |  String | Number  | Boolean   |
 [---------------- Scale of types in one object -----------------]
-|    100    |  100    |  100    |  100    |  100    |  100      |
-[------------------------ Read JSON (ms) -----------------------]
-|                     str_size: 22542, 16ms                     |
+|    10000  |  10000  |  10000  |  10000  |  10000  |  10000    |
+[----------------------- Write JSON (ms) -----------------------]
+|                    str_size: 2373342, 47ms                    |
 [===============================================================]
 
 [===============================================================]
 [--------------- Run tiny_json performance test ----------------]
-[----------------------- Write benchmark -----------------------]
+[----------------------- Read benchmark ------------------------]
 |     Null  |  Array  |  Object |  String | Number  | Boolean   |
 [---------------- Scale of types in one object -----------------]
 |    1000   |  1000   |  1000   |  1000   |  1000   |  1000     |
-[----------------------- Write JSON (ms) -----------------------]
-|                    str_size: 231342, 16ms                     |
+[------------------------ Read JSON (ms) -----------------------]
+|                    str_size: 231342, 125ms                    |
 [===============================================================]
 
 [===============================================================]
@@ -116,9 +117,9 @@ Test cases defined below:
 [---------------- Scale of types in one object -----------------]
 |    100000 |  100000 |  100000 |  100000 |  100000 |  100000   |
 [--------------------- Construct time (ms) ---------------------]
-|    62     |  219    |  485    |  125    |  62     |  47       |
+|    15     |  110    |  203    |  47     |  31     |  47       |
 [--------------------- Destruct time (ms) ----------------------]
-|    78     |  78     |  125    |  63     |  62     |  63       |
+|    31     |  47     |  62     |  47     |  32     |  31       |
 [===============================================================]
 
 [===============================================================]
@@ -130,7 +131,7 @@ Test cases defined below:
 |                             10000                             |
 [--------------------- Construct time (ms) ---------------------]
 [--------------------- Includes write JSON ---------------------]
-|                             7281                              |
+|                             3640                              |
 [===============================================================]
 ```
 
