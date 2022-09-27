@@ -2,7 +2,7 @@
 ![](https://img.shields.io/badge/c%2B%2B-11-blue) ![](https://img.shields.io/badge/release-v1.2-blue) ![](https://img.shields.io/badge/coverage-100%25-green) ![](https://img.shields.io/badge/license-mit-blue)
 
 ### 介绍
-Tiny-JSON 是一个用 C++11 实现的轻量化 JSON 解析和生成器（支持 JSON5），导入项目仅需包含一个头文件。编码风格参考了 C++ 谷歌命名规范，注释丰富，无第三方库依赖。
+Tiny-JSON 是一个用 C++11 实现的轻量化 JSON 解析和生成器（支持 JSON5），编码风格参考了 C++ 谷歌命名规范，注释丰富，无第三方库依赖。
 
 [English version](https://github.com/Syan-Lin/Tiny-JSON/blob/main/README-en.md)
 
@@ -12,6 +12,9 @@ Tiny-JSON 是一个用 C++11 实现的轻量化 JSON 解析和生成器（支持
 - 较高的代码可读性
 - 支持 JSON5
 - 极简的用法
+
+### 如何使用
+引入 `tiny_json.h` 需要编译 `tiny_json.cpp` 和 `tiny_json_frame.cpp` 两个文件
 
 ### 示例
 编译器版本：`gcc version 8.1.0 (x86_64-posix-seh-rev0)`

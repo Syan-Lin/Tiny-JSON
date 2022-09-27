@@ -2,7 +2,7 @@
 ![](https://img.shields.io/badge/c%2B%2B-11-blue) ![](https://img.shields.io/badge/release-v1.2-blue) ![](https://img.shields.io/badge/coverage-100%25-green) ![](https://img.shields.io/badge/license-mit-blue)
 
 ### Introduction
-Tiny-JSON is a light-weight JSON liberary implemented by C++11, only one head file needed to import projects. The coding style refers to Google C++ Style Guide, and have rich annotations, no third party dependency.
+Tiny-JSON is a light-weight JSON liberary implemented by C++11. The coding style refers to Google C++ Style Guide, and have rich annotations, no third party dependency.
 
 [中文版本](https://github.com/Syan-Lin/Tiny-JSON/blob/main/README.md)
 
@@ -12,6 +12,9 @@ Tiny-JSON is a light-weight JSON liberary implemented by C++11, only one head fi
 - Highly readable code
 - Support JSON5
 - Extremly easy used
+
+### How to use
+Includes `tiny_json.h` need to compile `tiny_json.cpp` and `tiny_json_frame.cpp`.
 
 ### Examples
 Compiler version: `gcc version 8.1.0 (x86_64-posix-seh-rev0)`
