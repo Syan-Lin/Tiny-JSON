@@ -147,3 +147,5 @@ Test cases defined below, tested in CPU i5-12600KF:
 - [x] Normal pointer version
 - [x] Optimize class performance
 - [ ] Optimize read performance
+- [ ] Linux support
+- [ ] Test performance in multithread
