@@ -25,8 +25,8 @@ bool tiny_json::FORMAT_CHECK = true;
 ***************************/
 
 // 判断是否在字符串中，不在字符串中执行 function2
-template<typename function1, typename function2>
-static void fcnIfNotInQuote(const std::string&, int&, function1, function2);
+template<typename function1, typename function2, typename function3>
+static void fcnIfNotInQuote(const std::string&, int&, function1, function2, function3);
 // 检查能否转化为数字
 static bool parseableNumber(const std::string&);
 // 检查能否转化为数组
@@ -112,22 +112,23 @@ void tiny_json::writeFile(const std::string& path, const std::string& json){
     ofs.close();
 }
 void tiny_json::removeAnnotation(std::string& str){
+    std::string temp;
     bool is_annotation = false, is_block_annotation = false;
     int i;
     fcnIfNotInQuote(str, i, [&]{
         if(is_annotation){
             while(str[i] != '\n'){
-                str.erase(i, 1);
+                i++;
             }
-            str.erase(i, 1);
+            i++;
             is_annotation = false;
         }else if(is_block_annotation){
             while(i + 1 < str.size()){
                 if(str[i+1] == '/' && str[i] == '*'){
-                    str.erase(i, 2);
+                    i += 2;
                     break;
                 }else{
-                    str.erase(i, 1);
+                    i++;
                 }
             }
             is_block_annotation = false;
@@ -140,7 +141,14 @@ void tiny_json::removeAnnotation(std::string& str){
             i -= 2;
             is_block_annotation = true;
         }
+    }, [&]{
+        if(!is_annotation && !is_block_annotation){
+            temp += str[i];
+        }else{
+            temp.erase(temp.size() - 1, 1);
+        }
     });
+    str = std::move(temp);
 }
 
 /**************************
@@ -214,18 +222,8 @@ std::string tiny_json::Object::parse(){
     return result;
 }
 void tiny_json::Object::initFromJSON(const std::string& str){
-    std::string str_copy = str;
-    while(!str_copy.empty() && str_copy[0] != '{'){
-        str_copy.erase(0, 1);
-    }
-    while(!str_copy.empty() && str_copy[str_copy.size()-1] != '}'){
-        str_copy.erase(str_copy.size()-1, 1);
-    }
-    if(str_copy.size() < 2){
-        Log::error("Object", "字符串 " + str + " 不能转化为 Object 对象!");
-        return;
-    }
-    if(FORMAT_CHECK || parseable(str_copy, Type::kObject)){
+    if(FORMAT_CHECK || parseable(str, Type::kObject)){
+        std::string str_copy = str;
         removeBlank(str_copy);
         std::vector<int> divisions;
         if(!checkQuoMark(str_copy, divisions)){
@@ -506,12 +504,6 @@ void tiny_json::Value::initFromJSON(const std::string& str){
 * @test     100%
 ***************************/
 
-// 拷贝控制成员
-// tiny_json::Array::Array(std::initializer_list<Value> il){
-//     for(auto beg = il.begin(); beg != il.end(); ++beg){
-//         this->append(*beg);
-//     }
-// }
 tiny_json::Array::Array(Vector&& val){
     arr_ = std::move(val);
 }
@@ -597,21 +589,11 @@ std::string tiny_json::Array::parse(){
     return result;
 }
 void tiny_json::Array::initFromJSON(const std::string& str){
-    std::string str_copy = str;
-    while(!str_copy.empty() && str_copy[0] != '['){
-        str_copy.erase(0, 1);
-    }
-    while(!str_copy.empty() && str_copy[str_copy.size()-1] != ']'){
-        str_copy.erase(str_copy.size()-1, 1);
-    }
-    if(str_copy.size() < 2){
-        Log::error("Array", "字符串 " + str + " 不能转化为 Array 对象!");
-        return;
-    }
-    if(FORMAT_CHECK || parseable(str_copy, Type::kArray)){
+    if(FORMAT_CHECK || parseable(str, Type::kArray)){
+        std::string str_copy = str;
+        removeBlank(str_copy);
         // 生成 Array
         // [..., ".[].,..", '.[].,..', ...]
-        removeBlank(str_copy);
         std::vector<int> divisions;
         if(!checkQuoMark(str_copy, divisions)){
             return;
@@ -887,19 +869,17 @@ void tiny_json::String::initFromJSON(const std::string& str){
         Log::error("String", "字符串 " + str + " 不能转化为 String 对象!");
         return;
     }
-    std::string str_copy = str;
-    // 去除引号
-    str_copy.erase(0, 1);
-    str_copy.erase(str_copy.size() - 1, 1);
-    // JSON5 删除换行等等字符
-    for(int i = 0; i < str_copy.size(); i++){
-        if(str_copy[i] == '\n'){
-            while(str_copy[i] == '\b' || str_copy[i] == '\f'
-                    || str_copy[i] == '\t' || str_copy[i] == '\r'
-                    || str_copy[i] == '\n' || str_copy[i] == ' '){
-                str_copy.erase(i, 1);
+    std::string str_copy;
+    // 去除引号，并 JSON5 删除换行等等字符
+    for(int i = 1; i < str.size() - 1; i++){
+        if(str[i] == '\n'){
+            while(i < str.size() - 1 && (str[i] == '\b' || str[i] == '\f'
+                    || str[i] == '\t' || str[i] == '\r'
+                    || str[i] == '\n' || str[i] == ' ')){
+                i++;
             }
         }
+        str_copy += str[i];
     }
     str_ = str_copy;
     str_copy.clear();
@@ -955,7 +935,7 @@ static bool checkQuoMark(const std::string& str, std::vector<int>& indexes){
         }else if(str[i] == ',' && num_square == 0 && num_brace == 0){
             indexes.push_back(i);
         }
-    });
+    }, []{});
     if(num_brace + num_square > 0){
         tiny_json_log::Log::error("check", "字符串 " + str + "不能转化为 Object 或 Array 对象!(括号错误)");
         return false;
@@ -963,15 +943,25 @@ static bool checkQuoMark(const std::string& str, std::vector<int>& indexes){
     return true;
 }
 static std::string& removeBlank(std::string& str){
+    std::string temp;
     int i;
+    bool isBlank = false;
     fcnIfNotInQuote(str, i, []{}, [&]{
         while(i < str.size() && str[i] == '\n' || str[i] == '\t' || str[i] == ' '){
-            str.erase(i, 1);
-            i--;
+            isBlank = true;
+            i++;
+        }
+    }, [&]{
+        if(i > 0 && i < str.size() - 1){
+            if(isBlank){
+                i--;
+                isBlank = false;
+            }else{
+                temp += str[i];
+            }
         }
     });
-    str.erase(0, 1);
-    str.erase(str.size() - 1, 1);
+    str = std::move(temp);
     return str;
 }
 static bool parseableArray(const std::string& str){
@@ -1041,10 +1031,8 @@ static bool parseableString(const std::string& str){
             !(str[0] == '\'' && str[str.size()-1] == '\'' && JSON5)){
         return false;
     }
-    std::string str_copy = str;
     // 去除引号
-    str_copy.erase(0, 1);
-    str_copy.erase(str_copy.size() - 1, 1);
+    std::string str_copy(str.begin() + 1, str.end() - 1);
     for(int i = 0; i < str_copy.size(); i++){
         if(str_copy[i] == '\\'){
             i++;
@@ -1099,16 +1087,10 @@ static bool checkKV(const std::string& str){
 }
 static bool parseableObject(const std::string& str){
     std::string str_copy = str;
-    while(!str_copy.empty() && str_copy[0] != '{'){
-        str_copy.erase(0, 1);
-    }
-    while(!str_copy.empty() && str_copy[str_copy.size()-1] != '}'){
-        str_copy.erase(str_copy.size()-1, 1);
-    }
+    removeBlank(str_copy);
     if(str_copy.size() < 2){
         return false;
     }
-    removeBlank(str_copy);
     std::vector<int> divisions;
     if(!checkQuoMark(str_copy, divisions)){
         return false;
@@ -1193,8 +1175,8 @@ static std::string& format(std::string& str){
     return str;
 }
 
-template<typename function1, typename function2>
-static void fcnIfNotInQuote(const std::string& str, int& i, function1 fcn1, function2 fcn2){
+template<typename function1, typename function2, typename function3>
+static void fcnIfNotInQuote(const std::string& str, int& i, function1 fcn1, function2 fcn2, function3 fcn3){
     bool in_double = false, in_single = false;
     for(i = 0; i < str.size(); i++){
         fcn1();
@@ -1210,5 +1192,6 @@ static void fcnIfNotInQuote(const std::string& str, int& i, function1 fcn1, func
         }else if(in_single && str[i] == '\'' && str[i-1] != '\\'){
             in_single = false;
         }
+        fcn3();
     }
 }

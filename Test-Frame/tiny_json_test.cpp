@@ -816,6 +816,7 @@ void PerformanceTest(){
     pt.classBenchmark();
     pt.setScale(10000);
     pt.writeBenchmark();
+    pt.readBenchmark();
     pt.classBenchmark();
     pt.setScale(100000);
     pt.classBenchmark();

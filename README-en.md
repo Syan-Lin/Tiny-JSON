@@ -110,7 +110,7 @@ Test cases defined below, tested in CPU i5-12600KF:
 [---------------- Scale of types in one object -----------------]
 |    1000   |  1000   |  1000   |  1000   |  1000   |  1000     |
 [------------------------ Read JSON (ms) -----------------------]
-|                    str_size: 231342, 125ms                    |
+|                    str_size: 231342, 63ms                     |
 [===============================================================]
 
 [===============================================================]
@@ -146,6 +146,6 @@ Test cases defined below, tested in CPU i5-12600KF:
 - [x] Test frame
 - [x] Normal pointer version
 - [x] Optimize class performance
-- [ ] Optimize read performance
+- [x] Optimize read performance
 - [ ] Linux support
 - [ ] Test performance in multithread
