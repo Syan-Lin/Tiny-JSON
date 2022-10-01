@@ -148,4 +148,3 @@ Test cases defined below, tested in CPU i5-12600KF:
 - [x] Optimize class performance
 - [x] Optimize read performance
 - [ ] Linux support
-- [ ] Test performance in multithread
