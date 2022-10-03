@@ -14,6 +14,7 @@
 #include <stack>
 #include <algorithm>
 #include <fstream>
+#include <vector>
 
 bool tiny_json::JSON5 = false;
 bool tiny_json::FORMAT_CHECK = true;
@@ -41,115 +42,6 @@ static bool checkQuoMark(const std::string&, std::vector<int>&);
 static std::string& removeBlank(std::string&);
 // 格式化 JSON
 static std::string& format(std::string&);
-
-/**************************
-* @author   Yuan.
-* @date     2022/9/4
-* @brief    外部调用
-***************************/
-
-bool tiny_json::parseable(const std::string& str, tiny_json::Type type){
-    if(!tiny_json::FORMAT_CHECK) return true;
-    using namespace tiny_json;
-    switch(type){
-        case Type::kBoolean:
-            return (str == "true" || str == "false") ? true : false;
-        case Type::kNull:
-            return str == "null" ? true : false;
-        case Type::kNumber:
-            return parseableNumber(str);
-        case Type::kString:
-            return parseableString(str);
-        case Type::kArray:
-            return parseableArray(str);
-        case Type::kObject:
-            return parseableObject(str);
-        case Type::kValue:
-            return parseable(str, Type::kNumber) || parseable(str, Type::kString)
-                || parseable(str, Type::kBoolean) || parseable(str, Type::kNull)
-                || parseable(str, Type::kObject) || parseable(str, Type::kArray);
-    }
-    return false;
-}
-std::string tiny_json::parse(Object& obj, bool form){
-    std::string result;
-    result = obj.parse();
-    if(form){
-        format(result);
-    }
-    return result;
-}
-tiny_json::Object tiny_json::parse(std::string& str){
-    Object obj;
-    if(JSON5){
-        removeAnnotation(str);
-    }
-    obj.initFromJSON(str);
-    return obj;
-}
-tiny_json::Object tiny_json::readFile(const std::string& path){
-    std::ifstream file;
-	file.open(path, std::ios::in);
-	if(!file.is_open()){
-        Log::error("file", "无法打开文件：" + path);
-		return Object();
-	}
-	std::string buff, result;
-	while(std::getline(file, buff)){
-		result += buff + '\n';
-	}
-	file.close();
-    return parse(result);
-}
-void tiny_json::writeFile(const std::string& path, const std::string& json){
-    std::ofstream ofs;
-	ofs.open(path, std::ios::out);
-    if(!ofs.is_open()){
-        Log::error("file", "文件写入失败，路径：" + path);
-        return;
-    }
-    ofs << json;
-    ofs.close();
-}
-void tiny_json::removeAnnotation(std::string& str){
-    std::string temp;
-    bool is_annotation = false, is_block_annotation = false;
-    int i;
-    fcnIfNotInQuote(str, i, [&]{
-        if(is_annotation){
-            while(str[i] != '\n'){
-                i++;
-            }
-            i++;
-            is_annotation = false;
-        }else if(is_block_annotation){
-            while(i + 1 < str.size()){
-                if(str[i+1] == '/' && str[i] == '*'){
-                    i += 2;
-                    break;
-                }else{
-                    i++;
-                }
-            }
-            is_block_annotation = false;
-        }
-    }, [&]{
-        if(i > 0 && str[i] == '/' && str[i-1] == '/'){
-            i -= 2;
-            is_annotation = true;
-        }else if(i > 0 && str[i] == '*' && str[i-1] == '/'){
-            i -= 2;
-            is_block_annotation = true;
-        }
-    }, [&]{
-        if(!is_annotation && !is_block_annotation){
-            temp += str[i];
-        }else{
-            temp.erase(temp.size() - 1, 1);
-        }
-    });
-    str = std::move(temp);
-}
 
 /**************************
 * @author   Yuan.
@@ -290,8 +182,8 @@ tiny_json::Value::Value(const std::string& str): type_(Type::kString), str_val_(
 tiny_json::Value::Value(std::initializer_list<kv> il): type_(Type::kObject), obj_val_(new Object(il)){}
 tiny_json::Value::Value(const Object& val): type_(Type::kObject), obj_val_(new Object(val)){}
 tiny_json::Value::Value(const Array& val): type_(Type::kArray), arr_val_(new Array(val)){}
-tiny_json::Value::Value(Object&& val) noexcept { type_ = Type::kObject; obj_val_ = new Object(val); }
-tiny_json::Value::Value(Array&& val) noexcept { type_ = Type::kArray; arr_val_ = new Array(val); }
+tiny_json::Value::Value(Object&& val) noexcept { type_ = Type::kObject; obj_val_ = new Object(std::move(val)); }
+tiny_json::Value::Value(Array&& val) noexcept { type_ = Type::kArray; arr_val_ = new Array(std::move(val)); }
 tiny_json::Value::Value(const Value& val): type_(val.type_){
     switch(type_){
         case Type::kString:     str_val_ = new String(*val.str_val_);   break;
@@ -454,6 +346,15 @@ void tiny_json::Value::parseSetting(NumberType type, size_t decimal_place){
         num_val_->parseSetting(type, decimal_place);
     }else{
         Log::warning("Value", parse() + " 非 Number 类型，不能使用 parseSetting()");
+    }
+}
+int tiny_json::Value::size(){
+    if(type_ == Type::kArray){
+        return arr_val_->size();
+    }else if(type_ == Type::kObject){
+        return obj_val_->size();
+    }else{
+        return 0;
     }
 }
 
@@ -1194,4 +1095,250 @@ static void fcnIfNotInQuote(const std::string& str, int& i, function1 fcn1, func
         }
         fcn3();
     }
+}
+
+/**************************
+* @author   Yuan.
+* @date     2022/9/4
+* @brief    外部调用
+***************************/
+
+bool tiny_json::parseable(const std::string& str, tiny_json::Type type){
+    if(!tiny_json::FORMAT_CHECK) return true;
+    using namespace tiny_json;
+    switch(type){
+        case Type::kBoolean:
+            return (str == "true" || str == "false") ? true : false;
+        case Type::kNull:
+            return str == "null" ? true : false;
+        case Type::kNumber:
+            return parseableNumber(str);
+        case Type::kString:
+            return parseableString(str);
+        case Type::kArray:
+            return parseableArray(str);
+        case Type::kObject:
+            return parseableObject(str);
+        case Type::kValue:
+            return parseable(str, Type::kNumber) || parseable(str, Type::kString)
+                || parseable(str, Type::kBoolean) || parseable(str, Type::kNull)
+                || parseable(str, Type::kObject) || parseable(str, Type::kArray);
+    }
+    return false;
+}
+std::string tiny_json::parse(json& obj, bool form){
+    std::string result;
+    result = obj.parse();
+    if(form){
+        format(result);
+    }
+    return result;
+}
+
+// 没有错误检查，请保证 str 可以转化为 json
+tiny_json::json tiny_json::parse(std::string& str){
+    if(JSON5){
+        removeAnnotation(str);
+    }
+    Value result = Object();
+    int begin, end;
+    // 找到第一对大括号
+    for(int i = 0; i < str.size(); i++){
+        if(str[i] == '{'){
+            begin = i + 1;
+            break;
+        }
+    }
+    for(int i = str.size()-1; i >= 0; i--){
+        if(str[i] == '}'){
+            end = i + 1;
+            break;
+        }
+    }
+    std::string token, key;
+    bool is_key = true, is_obj = true;
+    std::vector<Value*> list;
+    list.push_back(&result);
+    bool in_double = false, in_single = false;
+    for(int i = begin; i < end; i++){
+        if(!in_double && !in_single){
+            if(str[i] == '"'){
+                in_double = true;
+            }else if(str[i] == '\''){
+                in_single = true;
+            }
+        }else if(in_double && str[i] == '"' && str[i-1] != '\\'){
+            in_double = false;
+        }else if(in_single && str[i] == '\'' && str[i-1] != '\\'){
+            in_single = false;
+        }
+        if(str[i] == ' ' || str[i] == '\n' || str[i] == '\r' || str[i] == '\t'){
+            if(!(in_double || in_single)) continue;
+        }
+        switch(str[i]){
+            case '{':{
+                if(in_double || in_single){
+                    goto dft;
+                }
+                if((*list.back()).getType() == Type::kObject){
+                    (*list.back())[key] = Value(Object());
+                    list.push_back(&(*list.back())[key]);
+                }else{
+                    list.back()->get<Array>().append(Value(Object()));
+                    int size = (*list.back()).size();
+                    list.push_back(&(*list.back())[size - 1]);
+                }
+                is_key = true;
+                is_obj = true;
+                break;
+            }
+            case '}':
+                if(in_double || in_single){
+                    goto dft;
+                }
+                // JSON5
+                if(!token.empty()){
+                    (*list.back())[key] = Value(std::string(token));
+                }
+                list.pop_back();
+                is_key = false;
+                if(list.empty()) break;
+                if((*list.back()).getType() == Type::kObject){
+                    is_obj = true;
+                }else{
+                    is_obj = false;
+                }
+                token.clear();
+                key.clear();
+                break;
+            case '[':{
+                if(in_double || in_single){
+                    goto dft;
+                }
+                if((*list.back()).getType() == Type::kObject){
+                    (*list.back())[key] = Value(Array());
+                    list.push_back(&(*list.back())[key]);
+                }else{
+                    list.back()->get<Array>().append(Value(Array()));
+                    int size = (*list.back()).size();
+                    list.push_back(&(*list.back())[size - 1]);
+                }
+                is_key = false;
+                is_obj = false;
+                break;
+            }
+            case ']':
+                if(in_double || in_single){
+                    goto dft;
+                }
+                // JSON5
+                if(!token.empty()){
+                    list.back()->get<Array>().append(Value(std::string(token)));
+                }
+                list.pop_back();
+                is_key = false;
+                if((*list.back()).getType() == Type::kObject){
+                    is_obj = true;
+                }else{
+                    is_obj = false;
+                }
+                token.clear();
+                key.clear();
+                break;
+            case ',':
+                if(in_double || in_single){
+                    goto dft;
+                }
+                if(is_obj){
+                    if(!token.empty()){
+                        (*list.back())[key] = Value(std::string(token));
+                    }
+                    is_key = true;
+                }else if(!token.empty()){
+                    (*list.back()).get<Array>().append(Value(std::string(token)));
+                }
+                token.clear();
+                key.clear();
+                break;
+            case ':':
+                if(in_double || in_single){
+                    goto dft;
+                }
+                key = token;
+                token.clear();
+                is_key = false;
+                break;
+            default:
+                dft:
+                if(!(is_key && str[i] == '"')){
+                    token += str[i];
+                }
+                break;
+        }
+    }
+    return result;
+}
+
+tiny_json::json tiny_json::readFile(const std::string& path){
+    std::ifstream file;
+	file.open(path, std::ios::in);
+	if(!file.is_open()){
+        Log::error("file", "无法打开文件：" + path);
+		return json();
+	}
+	std::string buff, result;
+	while(std::getline(file, buff)){
+		result += buff + '\n';
+	}
+	file.close();
+    return parse(result);
+}
+void tiny_json::writeFile(const std::string& path, const std::string& json){
+    std::ofstream ofs;
+	ofs.open(path, std::ios::out);
+    if(!ofs.is_open()){
+        Log::error("file", "文件写入失败，路径：" + path);
+        return;
+    }
+    ofs << json;
+    ofs.close();
+}
+void tiny_json::removeAnnotation(std::string& str){
+    std::string temp;
+    bool is_annotation = false, is_block_annotation = false;
+    int i;
+    fcnIfNotInQuote(str, i, [&]{
+        if(is_annotation){
+            while(str[i] != '\n'){
+                i++;
+            }
+            i++;
+            is_annotation = false;
+        }else if(is_block_annotation){
+            while(i + 1 < str.size()){
+                if(str[i+1] == '/' && str[i] == '*'){
+                    i += 2;
+                    break;
+                }else{
+                    i++;
+                }
+            }
+            is_block_annotation = false;
+        }
+    }, [&]{
+        if(i > 0 && str[i] == '/' && str[i-1] == '/'){
+            i -= 2;
+            is_annotation = true;
+        }else if(i > 0 && str[i] == '*' && str[i-1] == '/'){
+            i -= 2;
+            is_block_annotation = true;
+        }
+    }, [&]{
+        if(!is_annotation && !is_block_annotation){
+            temp += str[i];
+        }else{
+            temp.erase(temp.size() - 1, 1);
+        }
+    });
+    str = std::move(temp);
 }

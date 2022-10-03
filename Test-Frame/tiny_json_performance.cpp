@@ -54,9 +54,8 @@ DWORD tiny_json_performance::Performance::getTime(){
 void tiny_json_performance::Performance::readBenchmark(){
     using namespace tiny_json;
     using namespace std;
-    Object obj;
+    json obj = Object();
     int sum = null_num_ + array_num_ + object_num_ + string_num_ + number_num_ + bool_num_;
-    obj.rehash(sum * 2);   // 设置槽数确保其不会影响性能测试
     Log::print("[===============================================================]");
     Log::print("[--------------- Run tiny_json performance test ----------------]");
     Log::print("[----------------------- Read benchmark ------------------------]");
@@ -95,7 +94,7 @@ void tiny_json_performance::Performance::readBenchmark(){
     }
     string temp = parse(obj);
     getTime();
-    Object init = parse(temp);
+    json init = parse(temp);
     Log::print("[------------------------ Read JSON (ms) -----------------------]");
     printLine("str_size: " + to_string(temp.size()) + ", " + to_string(getTime()) + "ms");
     Log::print("[===============================================================]\n");
@@ -103,9 +102,8 @@ void tiny_json_performance::Performance::readBenchmark(){
 void tiny_json_performance::Performance::writeBenchmark(){
     using namespace tiny_json;
     using namespace std;
-    Object obj;
+    json obj = Object();
     int sum = null_num_ + array_num_ + object_num_ + string_num_ + number_num_ + bool_num_;
-    obj.rehash(sum * 2);   // 设置槽数确保其不会影响性能测试
     Log::print("[===============================================================]");
     Log::print("[--------------- Run tiny_json performance test ----------------]");
     Log::print("[----------------------- Write benchmark -----------------------]");
@@ -253,9 +251,9 @@ void tiny_json_performance::Performance::runLoop(int loop){
     Log::print("[---------------------------- Loops ----------------------------]");
     printLine(to_string(loop));
     getTime();
-    string json;
+    string text;
     for(int i = 0; i < loop; i++){
-        Object obj;
+        json obj = Object();
         // 构造 Null
         for(int i = 0; i < null_num_; i++){
             string tag = "#null" + to_string(i);
@@ -286,7 +284,7 @@ void tiny_json_performance::Performance::runLoop(int loop){
             string tag = "#bool" + to_string(i);
             obj[tag] = Value(true);
         }
-        json = parse(obj);
+        text = parse(obj);
     }
     Log::print("[--------------------- Construct time (ms) ---------------------]");
     Log::print("[--------------------- Includes write JSON ---------------------]");

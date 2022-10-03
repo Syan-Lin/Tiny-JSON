@@ -39,7 +39,7 @@ std::string info;
 void FuncTest(){
     Test test("FuncTest");
 
-    string json = "{"
+    string text = "{"
         "\"integer\": 1,"
         "\"float\": 1.1,"
         "\"string\": \"Hello \\\"World!'\","
@@ -56,7 +56,7 @@ void FuncTest(){
         "\"age\": 16"
         "}"
         "}";
-    Object o4 = parse(json);
+    json o4 = parse(text);
     EXPECT_INT(test, 6, o4.size());
     EXPECT_STRING(test, "{\"array\": [1, \"string\", false, [\"peter\", \"bob\"], "
     "{\"age\": 16, \"name\": \"[Anna]\"}], \"bool\": true, \"float\": 1.1, \"integer\": 1, "
@@ -73,7 +73,7 @@ void FuncTest(){
     EXPECT_STRING(test, "{\"arrar\": [1, 2, {\"str\": \"abc\"}], \"obj\": {\"arrar\": [1, 2, {\"str\": \"abc\"}], \"str\": \"abc\"}, \"str\": \"abc\", \"str2\": \"ABC\"}", circle.parse());
 
     // 读写文件测试
-    Object o1;
+    json o1;
     for(int i = 0; i < 11; i++){
         string path = "Tests/test" + to_string(i+1) + ".json";
         o1 = readFile(path);
@@ -149,7 +149,7 @@ void ObjectTest(){
         "\"string\","
         "false,"
         "[\"peter\", \"bob\"],"
-        "{\"name\": \"[Anna]\", \"age\": 16}"
+        "{\"name\": \"[Anna]:\", \"age\": 16}"
         "],"
         "\"object\":{"
         "\"name\": \"Anna\","
@@ -159,7 +159,7 @@ void ObjectTest(){
     Object o4;
     o4.initFromJSON(json);
     EXPECT_INT(test, 6, o4.size());
-    EXPECT_STRING(test, R"({"object": {"age": 16, "name": "Anna"}, "array": [1, "string", false, ["peter", "bob"], {"age": 16, "name": "[Anna]"}], "bool": true, "string": "Hello \"World!'", "integer": 1, "float": 1.1})", o4.parse());
+    EXPECT_STRING(test, R"({"object": {"age": 16, "name": "Anna"}, "array": [1, "string", false, ["peter", "bob"], {"age": 16, "name": "[Anna]:"}], "bool": true, "string": "Hello \"World!'", "integer": 1, "float": 1.1})", o4.parse());
 
     // 错误测试
     // o4.remove("hhh");
@@ -784,7 +784,7 @@ void AnnotationTest(){
             "}"
     );
     // 只有在 parse 函数中才能去除注释
-    Object obj = parse(str);
+    json obj = parse(str);
     // 或者手动调用
     removeAnnotation(str);
     Object obj2;
@@ -796,7 +796,7 @@ void AnnotationTest(){
 // JSON5 混合测试
 void JSON5Test(){
     // 读写文件测试
-    Object o1;
+    json o1;
     for(int i = 0; i < 11; i++){
         string path = "Tests-JSON5/test" + to_string(i+1) + ".json5";
         o1 = readFile(path);

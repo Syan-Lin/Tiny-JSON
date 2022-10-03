@@ -22,7 +22,8 @@ class Object;
 class Array;
 class Number;
 class String;
-typedef decltype(nullptr) Null;
+using Null =  decltype(nullptr);
+using json = Value;
 
 // JSON 数据类型枚举
 enum class Type{
@@ -64,12 +65,13 @@ public:
 // JSON 键值对中的值：
 // 可以是 Number、Boolean、String、Null、Object、Array
 class Value : public Parseable{
-    typedef std::pair<std::string, Value> kv;
-    typedef bool Boolean;
-    typedef decltype(nullptr) Null;
+    using kv = std::pair<std::string, Value>;
+    using Boolean = bool;
+    using Null = decltype(nullptr);
 
     friend class Object;
     friend class Array;
+    friend json parse(std::string&);
 public:
     // 拷贝控制成员
     Value();
@@ -104,6 +106,8 @@ public:
     template<typename T> T& get();
     // 重置值为 Null
     void reset();
+    // 获取 array 或 object 的大小
+    int size();
     // 设置数字输出格式，当类型为 kInteger 或 kHex 时，第二个参数没有作用
     void parseSetting(NumberType, size_t = 6);
 
@@ -113,6 +117,7 @@ public:
     void initFromJSON(const std::string&) override;
 
 private:
+    // 从字符串初始化 Value，并非初始化成字符串类型的 Value
     explicit Value(std::string&&);
     Type type_;
     union{
@@ -280,13 +285,13 @@ private:
 };
 
 // 将对象转化为字符串，是否进行格式化，默认为是
-extern std::string parse(Object&, bool = true);
+extern std::string parse(json&, bool = true);
 // 将字符串转化为对象
-extern Object parse(std::string&);
+extern json parse(std::string&);
 // 判断字符串能否转化为对象
 extern bool parseable(const std::string&, Type type = Type::kObject);
 // 读取文件，参数为文件路径
-extern Object readFile(const std::string&);
+extern json readFile(const std::string&);
 // 写入 JSON 文件，参数为文件路径和 JSON 对象
 extern void writeFile(const std::string&, const std::string&);
 // 去除注释
