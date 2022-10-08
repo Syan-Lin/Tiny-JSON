@@ -10,7 +10,7 @@
         club: {
             properties: {
                 founded: {
-                    type: 'integer'
+                    type: 'integer',
                 },
                 name: {
                     type: 'string'
