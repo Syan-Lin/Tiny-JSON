@@ -9,6 +9,15 @@
 #include <codecvt>
 #include <locale>
 
+// 控制台颜色设置支持
+#ifdef _WIN32
+#include "Windows.h"
+#endif
+#ifdef linux
+#define RED "\033[0;32;31m"
+#define NONE "\033[m"
+#endif
+
 namespace tiny_json{
 
 // 是否使用 JSON5 标准
@@ -557,9 +566,36 @@ namespace json_parser{
 class JsonParser{
 public:
     int index = 0;
+    int line = 1;
+    bool fail = false;
     std::string& str;
+    std::string error_info = "";
+private:
+    void error(std::string info){
+        fail = true;
+        error_info += info + " in line: " + std::to_string(line) + '\n';
+    }
 public:
     JsonParser(std::string& str) : str(str) {}
+    ~JsonParser(){
+        if(detail && !error_info.empty()){
+            #ifdef _WIN32
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),0x04);
+            #endif
+            #ifdef linux
+            std::cout << RED;
+            #endif
+
+            std::cout << error_info;
+
+            #ifdef _WIN32
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),0x07);
+            #endif
+            #ifdef linux
+            std::cout << NONE;
+            #endif
+        }
+    }
     void skip_annotation(){
         if(index >= str.size()) return;
         if(str[index] == '/'){
@@ -568,23 +604,24 @@ public:
                 if(str[index] == '/'){
                     index++;
                     while(index < str.size() && str[index++] != '\n');
+                    if(str[index-1] == '\n') line++;
                 }else if(str[index] == '*'){
                     index++;
                     while(!(str[index++] == '*' && str[index++] == '/')){
                         if(index + 1 >= str.size()){
-                            // /* 没有 */ 匹配 TODO:
-                            if(detail) std::cout << "[TinyJSON] expect '*/' to match '/*'" << std::endl;
+                            // '/*' 没有 '*/' 匹配
+                            error("[TinyJSON] expect '*/' to match '/*'");
                             return;
                         }
                     }
                 }else{
-                    // 只有一个 /，后面不是 / 或 * TODO:
-                    if(detail) std::cout << "[TinyJSON] expect '/' or '*' after '/'" << std::endl;
+                    // 只有一个 '/' 后面不是 '/' 或 '*'
+                    error("[TinyJSON] expect '/' or '*' after '/'");
                     return;
                 }
             }else{
-                // 只有一个 / TODO:
-                if(detail) std::cout << "[TinyJSON] only one '/' found" << std::endl;
+                // 只有一个 '/'
+                error("[TinyJSON] only one '/' found");
                 return;
             }
         }
@@ -592,40 +629,45 @@ public:
     void skip_blanks(){
         while(index < str.size() && (str[index] == '\n'
             || str[index] == '\t' || str[index] == ' ')){
+            if(str[index] == '\n') line++;
             ++index;
         }
     }
     const char& move_next(){
         skip_blanks();
         skip_annotation();
-        if(index >= str.size()) return str.back();
+        if(index >= str.size()){
+            index = str.size() - 1;
+            return str.back();
+        }
         return str[index++];
     }
     Json parse_string(){
         std::string content;
         bool mode = str[index++] == '"';
         if(!mode && !JSON5){
-            // 非 JSON5 不支持单引号字符串 TODO:
-            if(detail) std::cout << "[TinyJSON] 'string' only supported in Json5" << std::endl;
+            // 非 JSON5 不支持单引号字符串
+            error("[TinyJSON] 'string' only supported in Json5");
             return Json();
         }
         for(; index < str.size(); index++){
             if(str[index] == '\n'){
                 // JSON5 字符串换行支持
                 if(!JSON5){
-                    // 非 JSON5 不支持字符串换行 TODO:
-                    if(detail) std::cout << "[TinyJSON] cross line string only supported in Json5" << std::endl;
+                    // 非 JSON5 不支持字符串换行
+                    error("[TinyJSON] cross line string only supported in Json5");
                     return Json();
                 }
                 while(index < str.size() && (str[index] == '\n' || str[index] == '\t' || str[index] == ' ')){
+                    if(str[index] == '\n') line++;
                     index++;
                 }
                 index--;
             }else if(str[index] == '\\'){
                 index++;
                 if(index == str.size()){
-                    // 转义错误 TODO:
-                    if(detail) std::cout << "[TinyJSON] expect character after \\" << std::endl;
+                    // 转义错误
+                    error("[TinyJSON] expect character after \\");
                     return Json();
                 }
                 switch(str[index]){
@@ -637,16 +679,16 @@ public:
                     case '\\': content += '\\'; break;
                     case '"':
                         if(!mode){
-                            // '"' 不需要转义 TODO:
-                            if(detail) std::cout << "[TinyJSON] \" doesn't need escape in ' '" << std::endl;
+                            // '"' 不需要转义
+                            error("[TinyJSON] \" doesn't need escape in ' '");
                             return Json();
                         }
                         content += '"';
                         break;
                     case '\'':
                         if(mode){
-                            // '\'' 不需要转义 TODO:
-                            if(detail) std::cout << "[TinyJSON] ' doesn't need escape in \" \"" << std::endl;
+                            // '\'' 不需要转义
+                            error("[TinyJSON] ' doesn't need escape in \" \"");
                             return Json();
                         }
                         content += '\'';
@@ -654,8 +696,8 @@ public:
                     case 'u':{
                         index++;
                         if(str.size() - 1 - index < 4){
-                            // \uxxxx 长度不够 TODO:
-                            if(detail) std::cout << "[TinyJSON] expect 4 characters after \\u" << std::endl;
+                            // \uxxxx 长度不够
+                            error("[TinyJSON] expect 4 characters after \\u");
                             return Json();
                         }
                         // unicode 转 string
@@ -666,8 +708,8 @@ public:
                         break;
                     }
                     default:
-                        // 转义符号错误 TODO:
-                        if(detail) std::cout << "[TinyJSON] escape character error: \\" + str[index] << std::endl;
+                        // 转义符号错误
+                        error(std::string("[TinyJSON] escape character error: \\") + str[index]);
                         return Json();
                 }
             }else if((mode && str[index] == '"') || (!mode && str[index] == '\'')){
@@ -676,8 +718,8 @@ public:
                 content += str[index];
             }
             if(index == str.size() - 1 && !((mode && str[index] == '"') || (!mode && str[index] == '\''))){
-                // 没有 '"' 或 '\'' 匹配 TODO:
-                if(detail) std::cout << "[TinyJSON] expect string wraper" << std::endl;
+                // 没有 '"' 或 '\'' 匹配
+                error("[TinyJSON] expect string wraper");
                 return Json();
             }
         }
@@ -698,16 +740,16 @@ public:
         Json number;
         if(hex){
             if(!JSON5){
-                // 非 JSON5 不支持十六进制数字 TODO:
-                if(detail) std::cout << "[TinyJSON] hexadecimal numeral only supported in Json5" << std::endl;
+                // 非 JSON5 不支持十六进制数字
+                error("[TinyJSON] hexadecimal numeral only supported in Json5");
                 return Json();
             }
             try{
                 number = std::stoi(temp, nullptr, 16);
                 number.hex(true);
             }catch(std::invalid_argument){
-                // 十六进制转化失败 TODO:
-                if(detail) std::cout << "[TinyJSON] hexadecimal numeral conversion failed: " + temp << std::endl;
+                // 十六进制转化失败
+                error(std::string("[TinyJSON] hexadecimal numeral conversion failed: ") + temp);
                 return Json();
             }
         }else{
@@ -715,8 +757,8 @@ public:
                 double t = std::stod(temp);
                 number = t;
             }catch(std::invalid_argument){
-                // 数字转化失败 TODO:
-                if(detail) std::cout << "[TinyJSON] numeral conversion failed: " + temp << std::endl;
+                // 数字转化失败
+                error(std::string("[TinyJSON] numeral conversion failed: ") + temp);
                 return Json();
             }
         }
@@ -724,13 +766,11 @@ public:
     }
     Json parse_true(){
         if(str.size() - index < 4){
-            // 错误 TODO:
-            if(detail) std::cout << "[TinyJSON] expect 4 charactors to match true" << std::endl;
+            error("[TinyJSON] expect 4 charactors to match true");
         }
         std::string temp = str.substr(index, 4);
         if(temp != "true"){
-            // 错误 TODO:
-            if(detail) std::cout << "[TinyJSON] expect \"true\" but get \"" + temp + '"' << std::endl;
+            error(std::string("[TinyJSON] expect \"true\" but get \"") + temp + '"');
             return Json();
         }
         index += 4;
@@ -738,13 +778,11 @@ public:
     }
     Json parse_false(){
         if(str.size() - index < 5){
-            // 错误 TODO:
-            if(detail) std::cout << "[TinyJSON] expect 5 charactors to match false" << std::endl;
+            error("[TinyJSON] expect 5 charactors to match false");
         }
         std::string temp = str.substr(index, 5);
         if(temp != "false"){
-            // 错误 TODO:
-            if(detail) std::cout << "[TinyJSON] expect \"false\" but get \"" + temp + '"' << std::endl;
+            error(std::string("[TinyJSON] expect \"false\" but get \"") + temp + '"');
             return Json();
         }
         index += 5;
@@ -752,13 +790,11 @@ public:
     }
     Json parse_null(){
         if(str.size() - index < 4){
-            // 错误 TODO:
-            if(detail) std::cout << "[TinyJSON] expect 4 charactors to match null" << std::endl;
+            error("[TinyJSON] expect 4 charactors to match null");
         }
         std::string temp = str.substr(index, 4);
         if(temp != "null"){
-            // 错误 TODO:
-            if(detail) std::cout << "[TinyJSON] expect \"null\" but get \"" + temp + '"' << std::endl;
+            error(std::string("[TinyJSON] expect \"null\" but get \"") + temp + '"');
             return Json();
         }
         index += 4;
@@ -770,6 +806,7 @@ public:
         index++;
 
         while(index < str.size()){
+            if(fail) return Json();
             char ch = move_next();
             if(ch == ']')
                 break;
@@ -785,32 +822,34 @@ public:
                 case '{':  arr[count++] = parse_object(); break;
                 case '[':  arr[count++] = parse_array();  break;
                 default:
-                    // 未知符号 TODO:
-                    if(detail) std::cout << "[TinyJSON] unkonwn symbol: " + ch << std::endl;
+                    // 未知符号
+                    error(std::string("[TinyJSON] unkonwn symbol: ") + ch);
                     return Json();
             }
+            if(fail) return Json();
             ch = move_next();
             if(ch == ']'){
                 break;
             }else if(ch != ','){
-                // 期待 ',' TODO:
-                if(detail) std::cout << "[TinyJSON] expect ',' but get '" + ch + '\'' << std::endl;
+                // 期待 ','
+                error(std::string("[TinyJSON] expect ',' but get '") + ch + '\'');
                 return Json();
             }
         }
         return arr;
     }
     Json parse_object(){
+        if(fail) return Json();
         Json obj = Object();
         std::string key;
-        if(str[index] != '{'){
-            // 期待 '{' TODO:
-            if(detail) std::cout << "[TinyJSON] expect '{' but get '" + str[index] + '\'' << std::endl;
+        if(move_next() != '{'){
+            // 期待 '{'
+            error(std::string("[TinyJSON] expect '{' but get '") + str[index] + '\'');
             return Json();
         }
-        index++;
 
         while(index < str.size()){
+            if(fail) return Json();
             char ch = move_next();
             if(ch == '}')
                 break;
@@ -828,19 +867,22 @@ public:
                 }
                 while(index < str.size() && str[index] != ' ' && str[index] != '\t'
                     && str[index] != '\n' && str[index] != ':' && str[index] != '\r'){
+                    if(str[index] == '\n') line++;
                     key += str[index++];
                 }
             }else{
-                // 期待 '"' TODO:
-                if(detail) std::cout << "[TinyJSON] expect '\"' but get '" + ch + '\'' << std::endl;
+                // 期待 '"'
+                error(std::string("[TinyJSON] expect '\"' but get '") + ch + '\'');
                 return Json();
             }
+            if(fail) return Json();
             ch = move_next();
             if(ch != ':'){
-                // 期待 ':' TODO:
-                if(detail) std::cout << "[TinyJSON] expect ':' but get '" + ch + '\'' << std::endl;
+                // 期待 ':'
+                error(std::string("[TinyJSON] expect ':' but get '") + ch + '\'');
                 return Json();
             }
+            if(fail) return Json();
             ch = move_next();
             index--;
             switch(ch){
@@ -854,18 +896,19 @@ public:
                 case '{': obj[key] = parse_object(); break;
                 case '[': obj[key] = parse_array();  break;
                 default:
-                    // 未知符号 TODO:
-                    if(detail) std::cout << "[TinyJSON] unkonwn symbol: " + ch << std::endl;
+                    // 未知符号
+                    error(std::string("[TinyJSON] unkonwn symbol: ") + ch);
                     return Json();
             }
+            if(fail) return Json();
             ch = move_next();
             if(ch == '}'){
                 break;
             }else if(ch == ','){
                 key.clear();
             }else{
-                // 期待 ',' TODO:
-                if(detail) std::cout << "[TinyJSON] expect ',' but get '" + ch + '\'' << std::endl;
+                // 期待 ','
+                error(std::string("[TinyJSON] expect ',' but get '") + ch + '\'');
             }
         }
         return obj;
@@ -879,6 +922,12 @@ public:
 
 inline Json parse(std::string& str){
     return json_parser::JsonParser(str).parse();
+}
+inline Json parse(std::string& str, std::string& error_info){
+    auto jp = json_parser::JsonParser(str);
+    auto json = jp.parse();
+    error_info = jp.error_info;
+    return json;
 }
 
 } // tiny_json
