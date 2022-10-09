@@ -12,10 +12,10 @@
 namespace tiny_json{
 
 // 是否使用 JSON5 标准
-// 注意事项：JSON5 下字符串请一律使用单引号包裹，且字符串中单引号需要转义
 inline bool JSON5 = false;
+// 是否显示错误信息
+inline bool detail = true;
 
-// 类型别名定义
 class Json;
 using Array  = std::vector<Json>;
 using Object = std::map<std::string, Json>;
@@ -125,7 +125,7 @@ private:
     JsonValue* m_val;
 };
 
-namespace{
+namespace internal_class {
 
 // 工具函数
 inline void parseImpl(std::nullptr_t, std::string& str) {
@@ -308,8 +308,6 @@ public:
     JsonNull() : JsonBasic(nullptr){}
 };
 
-} // 匿名内部命名空间
-
 inline const std::string Global::empty_string;
 inline const Array Global::empty_array;
 inline const Object Global::empty_object;
@@ -330,22 +328,24 @@ inline JsonBoolean& Global::json_true(){
     return json_t;
 }
 
+} // internal_class
+
 // Json 实现
-inline Json::Json()                       : m_val(&Global::json_null()) {}
-inline Json::Json(std::nullptr_t)         : m_val(&Global::json_null()) {}
-inline Json::Json(double val)             : m_val(new JsonNumber(val)) {}
-inline Json::Json(int val)                : m_val(new JsonNumber(val)) {}
-inline Json::Json(bool val)               : m_val(val ? &Global::json_true() : &Global::json_false()) {}
-inline Json::Json(const std::string& val) : m_val(new JsonString(val)) {}
-inline Json::Json(std::string&& val)      : m_val(new JsonString(std::move(val))) {}
-inline Json::Json(const char* val)        : m_val(new JsonString(std::string(val))) {}
-inline Json::Json(const Array& val)       : m_val(new JsonArray(val)) {}
-inline Json::Json(Array&& val)            : m_val(new JsonArray(std::move(val))) {}
-inline Json::Json(const Object& val)      : m_val(new JsonObject(val)) {}
-inline Json::Json(Object&& val)           : m_val(new JsonObject(std::move(val))) {}
+inline Json::Json()                       : m_val(&internal_class::Global::json_null()) {}
+inline Json::Json(std::nullptr_t)         : m_val(&internal_class::Global::json_null()) {}
+inline Json::Json(double val)             : m_val(new internal_class::JsonNumber(val)) {}
+inline Json::Json(int val)                : m_val(new internal_class::JsonNumber(val)) {}
+inline Json::Json(bool val)               : m_val(val ? &internal_class::Global::json_true() : &internal_class::Global::json_false()) {}
+inline Json::Json(const std::string& val) : m_val(new internal_class::JsonString(val)) {}
+inline Json::Json(std::string&& val)      : m_val(new internal_class::JsonString(std::move(val))) {}
+inline Json::Json(const char* val)        : m_val(new internal_class::JsonString(std::string(val))) {}
+inline Json::Json(const Array& val)       : m_val(new internal_class::JsonArray(val)) {}
+inline Json::Json(Array&& val)            : m_val(new internal_class::JsonArray(std::move(val))) {}
+inline Json::Json(const Object& val)      : m_val(new internal_class::JsonObject(val)) {}
+inline Json::Json(Object&& val)           : m_val(new internal_class::JsonObject(std::move(val))) {}
 inline Json::Json(std::initializer_list<kv> il) {
-    m_val = new JsonObject(Object());
-    auto& mp = static_cast<JsonObject&>(*m_val).get_map();
+    m_val = new internal_class::JsonObject(Object());
+    auto& mp = static_cast<internal_class::JsonObject&>(*m_val).get_map();
     for(auto& e : il){
         mp.emplace(e.first, e.second);
     }
@@ -353,10 +353,10 @@ inline Json::Json(std::initializer_list<kv> il) {
 inline Json::Json(Json&& val)        : m_val(val.m_val) { val.m_val = nullptr; }
 inline Json::Json(const Json& val) {
     switch(val.type()){
-        case Type::OBJECT:  m_val = new JsonObject(val.m_val->get_object()); break;
-        case Type::STRING:  m_val = new JsonString(val.m_val->get_string()); break;
-        case Type::NUMBER:  m_val = new JsonNumber(val.m_val->get_double()); break;
-        case Type::ARRAY:   m_val = new JsonArray(val.m_val->get_array()); break;
+        case Type::OBJECT:  m_val = new internal_class::JsonObject(val.m_val->get_object()); break;
+        case Type::STRING:  m_val = new internal_class::JsonString(val.m_val->get_string()); break;
+        case Type::NUMBER:  m_val = new internal_class::JsonNumber(val.m_val->get_double()); break;
+        case Type::ARRAY:   m_val = new internal_class::JsonArray(val.m_val->get_array()); break;
         case Type::BOOLEAN: m_val = val.m_val; break;
         case Type::NUll:    m_val = val.m_val; break;
     }
@@ -384,24 +384,24 @@ inline const Object&      Json::get_object() const { return m_val->get_object();
 
 inline Json& Json::operator[](size_t index) {
     if(type() == Type::ARRAY){
-        auto& vec = static_cast<JsonArray&>(*m_val).get_vec();
+        auto& vec = static_cast<internal_class::JsonArray&>(*m_val).get_vec();
         while(index >= vec.size()){
             vec.push_back(Json());
         }
         return vec[index];
     }else{
-        return Global::json_default();
+        return internal_class::Global::json_default();
     }
 }
 inline Json& Json::operator[](const std::string& key) {
-    return type() == Type::OBJECT ? (*m_val)[key] : Global::json_default();
+    return type() == Type::OBJECT ? (*m_val)[key] : internal_class::Global::json_default();
 }
 inline Json& Json::operator=(const Json& val) {
     switch(val.type()){
-        case Type::OBJECT:  m_val = new JsonObject(val.m_val->get_object()); break;
-        case Type::STRING:  m_val = new JsonString(val.m_val->get_string()); break;
-        case Type::NUMBER:  m_val = new JsonNumber(val.m_val->get_double()); break;
-        case Type::ARRAY:   m_val = new JsonArray(val.m_val->get_array()); break;
+        case Type::OBJECT:  m_val = new internal_class::JsonObject(val.m_val->get_object()); break;
+        case Type::STRING:  m_val = new internal_class::JsonString(val.m_val->get_string()); break;
+        case Type::NUMBER:  m_val = new internal_class::JsonNumber(val.m_val->get_double()); break;
+        case Type::ARRAY:   m_val = new internal_class::JsonArray(val.m_val->get_array()); break;
         case Type::BOOLEAN: m_val = val.m_val; break;
         case Type::NUll:    m_val = val.m_val; break;
     }
@@ -417,131 +417,131 @@ inline Json& Json::operator=(std::nullptr_t) {
         if(type() != Type::BOOLEAN){
             delete m_val;
         }
-        m_val = &Global::json_null();
+        m_val = &internal_class::Global::json_null();
     }
     return *this;
 }
 inline Json& Json::operator=(double val) {
     if(type() == Type::NUMBER){
-        static_cast<JsonNumber&>(*m_val) = val;
+        static_cast<internal_class::JsonNumber&>(*m_val) = val;
     }else{
         if(type() != Type::BOOLEAN && type() != Type::NUll){
             delete m_val;
         }
-        m_val = new JsonNumber(val);
+        m_val = new internal_class::JsonNumber(val);
     }
     return *this;
 }
 inline Json& Json::operator=(int val) {
     if(type() == Type::NUMBER){
-        static_cast<JsonNumber&>(*m_val) = val;
+        static_cast<internal_class::JsonNumber&>(*m_val) = val;
     }else{
         if(type() != Type::BOOLEAN && type() != Type::NUll){
             delete m_val;
         }
-        m_val = new JsonNumber(val);
+        m_val = new internal_class::JsonNumber(val);
     }
     return *this;
 }
 inline Json& Json::operator=(bool val) {
     if(type() == Type::BOOLEAN){
-        m_val = val ? &Global::json_true() : &Global::json_false();
+        m_val = val ? &internal_class::Global::json_true() : &internal_class::Global::json_false();
     }else{
         if(type() != Type::NUll){
             delete m_val;
         }
-        m_val = new JsonBoolean(val);
+        m_val = new internal_class::JsonBoolean(val);
     }
     return *this;
 }
 inline Json& Json::operator=(const std::string& val) {
     if(type() == Type::STRING){
-        static_cast<JsonString&>(*m_val) = val;
+        static_cast<internal_class::JsonString&>(*m_val) = val;
     }else{
         if(type() != Type::BOOLEAN && type() != Type::NUll){
             delete m_val;
         }
-        m_val = new JsonString(val);
+        m_val = new internal_class::JsonString(val);
     }
     return *this;
 }
 inline Json& Json::operator=(std::string&& val) {
     if(type() == Type::STRING){
-        static_cast<JsonString&>(*m_val) = std::move(val);
+        static_cast<internal_class::JsonString&>(*m_val) = std::move(val);
     }else{
         if(type() != Type::BOOLEAN && type() != Type::NUll){
             delete m_val;
         }
-        m_val = new JsonString(std::move(val));
+        m_val = new internal_class::JsonString(std::move(val));
     }
     return *this;
 }
 inline Json& Json::operator=(const char* val) {
     if(type() == Type::STRING){
-        static_cast<JsonString&>(*m_val) = std::string(val);
+        static_cast<internal_class::JsonString&>(*m_val) = std::string(val);
     }else{
         if(type() != Type::BOOLEAN && type() != Type::NUll){
             delete m_val;
         }
-        m_val = new JsonString(std::string(val));
+        m_val = new internal_class::JsonString(std::string(val));
     }
     return *this;
 }
 inline Json& Json::operator=(const Array& val) {
     if(type() == Type::ARRAY){
-        static_cast<JsonArray&>(*m_val) = val;
+        static_cast<internal_class::JsonArray&>(*m_val) = val;
     }else{
         if(type() != Type::BOOLEAN && type() != Type::NUll){
             delete m_val;
         }
-        m_val = new JsonArray(val);
+        m_val = new internal_class::JsonArray(val);
     }
     return *this;
 }
 inline Json& Json::operator=(Array&& val) {
     if(type() == Type::ARRAY){
-        static_cast<JsonArray&>(*m_val) = std::move(val);
+        static_cast<internal_class::JsonArray&>(*m_val) = std::move(val);
     }else{
         if(type() != Type::BOOLEAN && type() != Type::NUll){
             delete m_val;
         }
-        m_val = new JsonArray(std::move(val));
+        m_val = new internal_class::JsonArray(std::move(val));
     }
     return *this;
 }
 inline Json& Json::operator=(const Object& val) {
     if(type() == Type::OBJECT){
-        static_cast<JsonObject&>(*m_val) = val;
+        static_cast<internal_class::JsonObject&>(*m_val) = val;
     }else{
         if(type() != Type::BOOLEAN && type() != Type::NUll){
             delete m_val;
         }
-        m_val = new JsonObject(val);
+        m_val = new internal_class::JsonObject(val);
     }
     return *this;
 }
 inline Json& Json::operator=(Object&& val) {
     if(type() == Type::OBJECT){
-        static_cast<JsonObject&>(*m_val) = std::move(val);
+        static_cast<internal_class::JsonObject&>(*m_val) = std::move(val);
     }else{
         if(type() != Type::BOOLEAN && type() != Type::NUll){
             delete m_val;
         }
-        m_val = new JsonObject(std::move(val));
+        m_val = new internal_class::JsonObject(std::move(val));
     }
     return *this;
 }
 
 inline void Json::hex(bool val) {
     if(type() == Type::NUMBER){
-        static_cast<JsonNumber&>(*m_val).is_hex = val;
+        static_cast<internal_class::JsonNumber&>(*m_val).is_hex = val;
     }
 }
 inline void Json::reset() {
     if(type() != Type::BOOLEAN && type() != Type::NUll){
         delete m_val;
     }
-    m_val = &Global::json_null();
+    m_val = &internal_class::Global::json_null();
 }
 inline Type Json::type() const { return m_val->type(); }
 
@@ -553,10 +553,14 @@ inline std::string Json::parse() const {
 
 namespace json_parser{
 
-// Json 解析类 TODO:
+// Json 解析类
 class JsonParser{
 public:
-    static void skip_annotation(int& index, const std::string& str){
+    int index = 0;
+    std::string& str;
+public:
+    JsonParser(std::string& str) : str(str) {}
+    void skip_annotation(){
         if(index >= str.size()) return;
         if(str[index] == '/'){
             index++;
@@ -568,41 +572,50 @@ public:
                     index++;
                     while(!(str[index++] == '*' && str[index++] == '/')){
                         if(index + 1 >= str.size()){
-                            // TODO: 注释错误，/* 没有 */ 匹配
-                            break;
+                            // TODO: /* 没有 */ 匹配
+                            if(detail) std::cout << "[TinyJSON] expect '*/' to match '/*'" << std::endl;
+                            return;
                         }
                     }
                 }else{
-                    // TODO: 注释错误，只有一个/，后面不是/或*
+                    // TODO: 只有一个 /，后面不是 / 或 *
+                    if(detail) std::cout << "[TinyJSON] expect '/' or '*' after '/'" << std::endl;
+                    return;
                 }
             }else{
-                // TODO: 注释错误，只有一个/
+                // TODO: 只有一个 /
+                if(detail) std::cout << "[TinyJSON] only one '/' found" << std::endl;
+                return;
             }
         }
     }
-    static void skip_blanks(int& index, const std::string& str){
+    void skip_blanks(){
         while(index < str.size() && (str[index] == '\n'
             || str[index] == '\t' || str[index] == ' ')){
             ++index;
         }
     }
-    static const char& move_next(int& index, const std::string& str){
-        skip_blanks(index, str);
-        skip_annotation(index, str);
+    const char& move_next(){
+        skip_blanks();
+        skip_annotation();
         if(index >= str.size()) return str.back();
         return str[index++];
     }
-    static Json parse_string(int& index, const std::string& str){
+    Json parse_string(){
         std::string content;
         bool mode = str[index++] == '"';
         if(!mode && !JSON5){
             // 非 JSON5 不支持单引号字符串 TODO:
+            if(detail) std::cout << "[TinyJSON] 'string' only supported in Json5" << std::endl;
+            return Json();
         }
         for(; index < str.size(); index++){
             if(str[index] == '\n'){
                 // JSON5 字符串换行支持
                 if(!JSON5){
                     // 非 JSON5 不支持字符串换行 TODO:
+                    if(detail) std::cout << "[TinyJSON] cross line string only supported in Json5" << std::endl;
+                    return Json();
                 }
                 while(index < str.size() && (str[index] == '\n' || str[index] == '\t' || str[index] == ' ')){
                     index++;
@@ -610,6 +623,11 @@ public:
                 index--;
             }else if(str[index] == '\\'){
                 index++;
+                if(index == str.size()){
+                    // 转义错误 TODO:
+                    if(detail) std::cout << "[TinyJSON] expect character after \\" << std::endl;
+                    return Json();
+                }
                 switch(str[index]){
                     case 'b':  content += '\b'; break;
                     case 'f':  content += '\f'; break;
@@ -620,12 +638,16 @@ public:
                     case '"':
                         if(!mode){
                             // '"' 不需要转义 TODO:
+                            if(detail) std::cout << "[TinyJSON] \" doesn't need escape in ' '" << std::endl;
+                            return Json();
                         }
                         content += '"';
                         break;
                     case '\'':
                         if(mode){
                             // '\'' 不需要转义 TODO:
+                            if(detail) std::cout << "[TinyJSON] ' doesn't need escape in \" \"" << std::endl;
+                            return Json();
                         }
                         content += '\'';
                         break;
@@ -633,7 +655,8 @@ public:
                         index++;
                         if(str.size() - 1 - index < 4){
                             // \uxxxx 长度不够 TODO:
-                            break;
+                            if(detail) std::cout << "[TinyJSON] expect 4 characters after \\u" << std::endl;
+                            return Json();
                         }
                         // unicode 转 string
                         std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> converter;
@@ -644,22 +667,28 @@ public:
                     }
                     default:
                         // 转义符号错误 TODO:
-                        break;
+                        if(detail) std::cout << "[TinyJSON] escape character error: \\" + str[index] << std::endl;
+                        return Json();
                 }
             }else if((mode && str[index] == '"') || (!mode && str[index] == '\'')){
                 break;
             }else{
                 content += str[index];
             }
+            if(index == str.size() - 1 && !((mode && str[index] == '"') || (!mode && str[index] == '\''))){
+                // 没有 '"' 或 '\'' 匹配 TODO:
+                if(detail) std::cout << "[TinyJSON] expect string wraper" << std::endl;
+                return Json();
+            }
         }
         index++;
         return Json(content);
     }
-    static Json parse_number(int& index, const std::string& str){
+    Json parse_number(){
         bool hex = index + 1 < str.size() && str[index] == '0' && (str[index+1] == 'x');
         std::string temp;
         while(index < str.size() && temp.back() != ',' && temp.back() != ']' && temp.back() != '}'){
-            temp += move_next(index, str);
+            temp += move_next();
         }
         if(temp.back() == ',' || temp.back() == ']' || temp.back() == '}'){
             temp.pop_back();
@@ -670,6 +699,7 @@ public:
         if(hex){
             if(!JSON5){
                 // 非 JSON5 不支持十六进制数字 TODO:
+                if(detail) std::cout << "[TinyJSON] hexadecimal numeral only supported in Json5" << std::endl;
                 return Json();
             }
             try{
@@ -677,6 +707,8 @@ public:
                 number.hex(true);
             }catch(std::invalid_argument){
                 // 十六进制转化失败 TODO:
+                if(detail) std::cout << "[TinyJSON] hexadecimal numeral conversion failed: " + temp << std::endl;
+                return Json();
             }
         }else{
             try{
@@ -684,80 +716,95 @@ public:
                 number = t;
             }catch(std::invalid_argument){
                 // 数字转化失败 TODO:
+                if(detail) std::cout << "[TinyJSON] numeral conversion failed: " + temp << std::endl;
+                return Json();
             }
         }
         return number;
     }
-    static Json parse_true(int& index, const std::string& str){
+    Json parse_true(){
+        if(str.size() - index < 4){
+            // 错误 TODO:
+            if(detail) std::cout << "[TinyJSON] expect 4 charactors to match true" << std::endl;
+        }
         std::string temp = str.substr(index, 4);
         if(temp != "true"){
             // 错误 TODO:
+            if(detail) std::cout << "[TinyJSON] expect \"true\" but get \"" + temp + '"' << std::endl;
+            return Json();
         }
         index += 4;
         return Json(true);
     }
-    static Json parse_false(int& index, const std::string& str){
+    Json parse_false(){
+        if(str.size() - index < 5){
+            // 错误 TODO:
+            if(detail) std::cout << "[TinyJSON] expect 5 charactors to match false" << std::endl;
+        }
         std::string temp = str.substr(index, 5);
         if(temp != "false"){
             // 错误 TODO:
+            if(detail) std::cout << "[TinyJSON] expect \"false\" but get \"" + temp + '"' << std::endl;
+            return Json();
         }
         index += 5;
         return Json(false);
     }
-    static Json parse_null(int& index, const std::string& str){
+    Json parse_null(){
+        if(str.size() - index < 4){
+            // 错误 TODO:
+            if(detail) std::cout << "[TinyJSON] expect 4 charactors to match null" << std::endl;
+        }
         std::string temp = str.substr(index, 4);
         if(temp != "null"){
             // 错误 TODO:
+            if(detail) std::cout << "[TinyJSON] expect \"null\" but get \"" + temp + '"' << std::endl;
+            return Json();
         }
         index += 4;
         return Json();
     }
-    static Json parse_array(int& index, const std::string& str){
+    Json parse_array(){
         Json arr = Array();
         int count = 0;
         index++;
 
         while(index < str.size()){
-            char ch = move_next(index, str);
+            char ch = move_next();
             --index;
             switch(ch){
                 case '0'...'9':
-                case '-':  arr[count++] = parse_number(index, str); break;
-                case 't':  arr[count++] = parse_true(index, str);   break;
-                case 'f':  arr[count++] = parse_false(index, str);  break;
-                case 'n':  arr[count++] = parse_null(index, str);   break;
-                case '"':  arr[count++] = parse_string(index, str); break;
-                case '{':  arr[count++] = parse_object(index, str); break;
-                case '[':  arr[count++] = parse_array(index, str);  break;
+                case '-':  arr[count++] = parse_number(); break;
                 case '\'':
-                    if(JSON5){
-                        arr[count++] = parse_string(index, str);
-                    }else{
-                        // 非 JSON5 不支持单引号字符串 TODO:
-                    }
-                    break;
+                case '"':  arr[count++] = parse_string(); break;
+                case 't':  arr[count++] = parse_true();   break;
+                case 'f':  arr[count++] = parse_false();  break;
+                case 'n':  arr[count++] = parse_null();   break;
+                case '{':  arr[count++] = parse_object(); break;
+                case '[':  arr[count++] = parse_array();  break;
                 default:
                     // 错误 TODO:
-                    break;
+                    if(detail) std::cout << "[TinyJSON] unkonwn symbol: " + ch << std::endl;
+                    return Json();
             }
-            ch = move_next(index, str);
+            ch = move_next();
             if(ch == ']'){
-                index--;
                 break;
-            }else if(ch != ',' && move_next(index, str) != ','){
+            }else if(ch != ','){
                 // 期待一个 ',' 但是不是 TODO:
+                if(detail) std::cout << "[TinyJSON] expect ',' but get '" + ch + '\'' << std::endl;
+                return Json();
             }
         }
-        index++;
         return arr;
     }
-    static Json parse_object(int& index, const std::string& str){
+    Json parse_object(){
         Json obj = Object();
         std::string key;
         index++;
 
         while(index < str.size()){
-            char ch = move_next(index, str);
+            char ch = move_next();
             --index;
             if(ch == '"'){
                 index++;
@@ -765,58 +812,64 @@ public:
                     key += str[index++];
                 }
                 index++;
-                ch = move_next(index, str);
             }else if(JSON5){
+                if(ch == '}'){
+                    index++;
+                    break;
+                }
                 while(index < str.size() && str[index] != ' ' && str[index] != '\t'
                     && str[index] != '\n' && str[index] != ':' && str[index] != '\r'){
                     key += str[index++];
                 }
-                ch = move_next(index, str);
             }else{
                 // 期待一个引号 TODO:
+                if(detail) std::cout << "[TinyJSON] expect '\"' but get '" + ch + '\'' << std::endl;
+                return Json();
             }
+            ch = move_next();
             if(ch != ':'){
                 // 期待一个冒号 TODO:
+                if(detail) std::cout << "[TinyJSON] expect ':' but get '" + ch + '\'' << std::endl;
+                return Json();
             }
-            ch = move_next(index, str);
+            ch = move_next();
+            index--;
             switch(ch){
                 case '0'...'9':
-                case '-': obj[key] = parse_number(index, str); break;
-                case 't': obj[key] = parse_true(index, str);   break;
-                case 'f': obj[key] = parse_false(index, str);  break;
-                case 'n': obj[key] = parse_null(index, str);   break;
-                case '{': obj[key] = parse_object(index, str); break;
-                case '[': obj[key] = parse_array(index, str);  break;
-                case '"': obj[key] = parse_string(index, str); break;
+                case '-': obj[key] = parse_number(); break;
                 case '\'':
-                    if(JSON5){
-                        obj[key] = parse_string(index, str);
-                    }else{
-                        // 非 JSON5 不支持单引号字符串 TODO:
-                    }
-                    break;
+                case '"': obj[key] = parse_string(); break;
+                case 't': obj[key] = parse_true();   break;
+                case 'f': obj[key] = parse_false();  break;
+                case 'n': obj[key] = parse_null();   break;
+                case '{': obj[key] = parse_object(); break;
+                case '[': obj[key] = parse_array();  break;
                 default:
                     // 错误 TODO:
-                    break;
+                    if(detail) std::cout << "[TinyJSON] unkonwn symbol: " + ch << std::endl;
+                    return Json();
             }
-            if(ch == '}') break;
-            if(ch == ','){
+            ch = move_next();
+            if(ch == '}'){
+                break;
+            }else if(ch == ','){
                 key.clear();
-            }else if(move_next(index, str) != ','){
-                // 错误,期待一个 ',' TODO:
             }else{
-                key.clear();
+                // 期待一个 ',' 但是不是 TODO:
+                if(detail) std::cout << "[TinyJSON] expect ',' but get '" + ch + '\'' << std::endl;
             }
         }
         return obj;
     }
-    static Json parse(const std::string& str){
-        int i = 0;
-        return parse_object(i, str);
+    Json parse(){
+        return parse_object();
     }
-
 };
 
-} // 匿名内部命名空间
+} // json_parser
+
+inline Json parse(std::string& str){
+    return json_parser::JsonParser(str).parse();
+}
 
 } // tiny_json
