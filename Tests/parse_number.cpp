@@ -1,40 +1,57 @@
 #include <iostream>
-#include <vector>
-#include <codecvt>
-#include <locale>
 #include "../tiny_json.h"
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#define DOCTEST_CONFIG_COLORS_ANSI
+#include "ThirdParty/doctest.h"
 using namespace std;
 using namespace tiny_json;
 using jp = json_parser::JsonParser;
 
-void test(string& str){
-    int i = 0;
-    auto after = jp::parse_number(i, str);
-    cout << "original: " << str << endl;
-    cout << "after: " << after.parse() << endl;
+string test_string(string str){
+    auto json = jp(str).parse_number();
+    return json.parse();
 }
 
-int main(){
-    vector<string> tests;
-    tests.push_back("123.22, ");
-    tests.push_back("1234567, 891010");
-    tests.push_back("12345678, 91010.123");
-    tests.push_back("123.22");
-    tests.push_back("1234567891010");
-    tests.push_back("1234567891010.123");
-    tests.push_back("123");
+// Corverage: 100%
+TEST_CASE("Parse_Number"){
+    detail = true;
+    SUBCASE("Json"){
+        JSON5 = false;
 
-    for(auto& e : tests){
-        test(e);
-        cout << endl;
+        CHECK(test_string("1.1, ") == "1.100000");
+        CHECK(test_string("123,") == "123");
+        CHECK(test_string("123.1] ") == "123.100000");
+        CHECK(test_string("123]") == "123");
+        CHECK(test_string("123.22} ") == "123.220000");
+        CHECK(test_string("123}") == "123");
+        CHECK(test_string("123") == "123");
+        CHECK(test_string("123.22") == "123.220000");
+
+        SUBCASE("Json_Error"){
+            CHECK(test_string("error") == "null");
+            CHECK(test_string("1.1.1") == "1.100000");
+            CHECK(test_string("0xb3") == "null");
+            CHECK(test_string("b123") == "null");
+        }
     }
+    SUBCASE("Json5"){
+        JSON5 = true;
 
-    JSON5 = true;
-    vector<string> test5;
-    test5.push_back("0xabc123");
+        CHECK(test_string("123.22, ") == "123.220000");
+        CHECK(test_string("123,") == "123");
+        CHECK(test_string("123.22] ") == "123.220000");
+        CHECK(test_string("123]") == "123");
+        CHECK(test_string("123.22} ") == "123.220000");
+        CHECK(test_string("123}") == "123");
+        CHECK(test_string("123") == "123");
+        CHECK(test_string("123.22") == "123.220000");
+        CHECK(test_string("0xb3") == "0xb3");
 
-    for(auto& e : test5){
-        test(e);
-        cout << endl;
+        SUBCASE("Json5_Error"){
+            CHECK(test_string("error") == "null");
+            CHECK(test_string("1.1.1") == "1.100000");
+            CHECK(test_string("0xb3.123") == "0xb3");
+            CHECK(test_string("b123") == "null");
+        }
     }
 }
