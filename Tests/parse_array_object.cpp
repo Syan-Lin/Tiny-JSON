@@ -1,64 +1,64 @@
 #include <iostream>
-#include <vector>
 #include "../tiny_json.h"
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#define DOCTEST_CONFIG_COLORS_ANSI
+#include "ThirdParty/doctest.h"
 using namespace std;
 using namespace tiny_json;
 using jp = json_parser::JsonParser;
 
-void test_arr(string& str){
-    int i = 0;
-    auto after = jp::parse_array(i, str);
-    cout << "original: " << str << endl;
-    cout << "after: " << after.parse() << endl;
+string test_arr(string str){
+    auto json = jp(str).parse_array();
+    return json.parse();
 }
-void test_obj(string& str){
-    int i = 0;
-    auto after = jp::parse_object(i, str);
-    cout << "original: " << str << endl;
-    cout << "after: " << after.parse() << endl;
+string test_obj(string str){
+    auto json = jp(str).parse_object();
+    return json.parse();
 }
 
-int main(){
-    vector<string> arr;
-    arr.push_back(R"([1, "abc",    null,
-                    false, true])");
-    arr.push_back(R"([[1,1],["a","a"],[true,false],[null,null]])");
-    arr.push_back(R"([[[    123,12  3],true
-                ],[false,["ab   c","a  bc"]]  , [true,false] , [null,null]])");
-    arr.push_back(R"([{"str" : "hello", "number" : [123, 234]},[123, 24],{"obj":{"name":"joe"}}])");
+// Corverage: 100%
+TEST_CASE("Parse_String"){
+    detail = false;
+    SUBCASE("Json"){
+        JSON5 = false;
 
-    vector<string> obj;
-    obj.push_back(R"({"str" : "hello", "number" : 123})");
-    obj.push_back(R"({"str":"hello","number":123})");
-    obj.push_back(R"({"str":{"str":"jane","arr":[1,2,3]},"number":123,"ha":null})");
-    obj.push_back(R"({"str"  :
-                    {"str"  :
-                    "jane",  "arr"
-                    :  [1,2,3]}  ,  "number" : 123, "ha" : null })");
+        SUBCASE("Array"){
+            CHECK(test_arr(R"([1,"hello",true,false,null])") == R"([1,"hello",true,false,null])");
+            CHECK(test_arr(R"([ 1, "hello" ,true, false ,null ])") == R"([1,"hello",true,false,null])");
+            CHECK(test_arr("[\t 1, \n\"hello\" ,\ntrue\t, \nfalse \t,null \n\t]") == R"([1,"hello",true,false,null])");
+            CHECK(test_arr(R"([[1,1],["a","a"],[true,false],[null,null]])") == R"([[1,1],["a","a"],[true,false],[null,null]])");
+            CHECK(test_arr(R"([[1 , 1],[" a ", "[a]"] , [ true, false], [ null,null] ])") == R"([[1,1],[" a ","[a]"],[true,false],[null,null]])");
+            CHECK(test_arr(R"([{"str:":"abc"},[1, 3]])") == R"([{"str:":"abc"},[1,3]])");
+            CHECK(test_arr(R"([[1,1,],["a","a",],[true,false,],[null,null,],])") == R"([[1,1],["a","a"],[true,false],[null,null]])");
+            CHECK(test_arr(R"([[1,1 , ],["a","a" , ], [true,  false ,],[null,null,  ]  ,])") == R"([[1,1],["a","a"],[true,false],[null,null]])");
+        }
+        SUBCASE("Object"){
+            CHECK(test_obj(R"({"str":"hello","number":1})") == R"({"number":1,"str":"hello"})");
+            CHECK(test_obj(R"({ "str" : "hello" ,"number":1 })") == R"({"number":1,"str":"hello"})");
+            CHECK(test_obj(R"({"obj":{"name":"jane","arr":[1,2,3]},"number":1,"weight":null})") == R"({"number":1,"obj":{"arr":[1,2,3],"name":"jane"},"weight":null})");
+            CHECK(test_obj(R"({"obj":{"name":"jane","arr":[1,2,3],},"number":1,"weight":null,})") == R"({"number":1,"obj":{"arr":[1,2,3],"name":"jane"},"weight":null})");
+        }
 
-    for(auto& e : arr){
-        test_arr(e);
-        cout << endl;
+        SUBCASE("Json_Error"){
+            SUBCASE("Array"){
+                CHECK(test_arr(R"([1,"hello" a,true,false,null])") == R"(null)");
+                CHECK(test_arr(R"([1,"hello"true,false,null])") == R"(null)");
+                CHECK(test_arr(R"([1,"hello",key,false,null])") == R"(null)");
+            }
+            SUBCASE("Object"){
+                CHECK(test_obj(R"(str:"hello","number":1})") == R"(null)");
+                CHECK(test_obj(R"({str:"hello","number":1})") == R"(null)");
+                CHECK(test_obj(R"({str:"hello","number":1,,})") == R"(null)");
+                CHECK(test_obj(R"({"str:"hello","number":1})") == R"(null)");
+                CHECK(test_obj(R"({str":"hello","number":1})") == R"(null)");
+                CHECK(test_obj(R"({str","hello","number":1})") == R"(null)");
+                CHECK(test_obj(R"({str","hello","number":1})") == R"(null)");
+                CHECK(test_obj(R"({'str',"hello","number":1)") == R"(null)");
+            }
+        }
     }
-
-    for(auto& e : obj){
-        test_obj(e);
-        cout << endl;
-    }
-
-    JSON5 = true;
-    vector<string> arr5;
-    arr5.push_back(R"([[1,1,],["a","a",],[true,false,],[null,null,],])");
-
-    vector<string> obj5;
-
-    for(auto& e : arr5){
-        test_arr(e);
-        cout << endl;
-    }
-
-    for(auto& e : obj5){
-        test_obj(e);
-        cout << endl;
+    SUBCASE("JSON5"){
+        JSON5 = true;
+        CHECK(test_obj(R"({str:'hello',number:1,})") == R"({number:1,str:'hello'})");
     }
 }

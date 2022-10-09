@@ -14,7 +14,7 @@ string test_string(string str){
 
 // Corverage: 100%
 TEST_CASE("Parse_Number"){
-    detail = true;
+    detail = false;
     SUBCASE("Json"){
         JSON5 = false;
 

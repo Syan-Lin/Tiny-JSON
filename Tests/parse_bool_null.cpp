@@ -22,7 +22,7 @@ string test_null(string str){
 
 // Corverage: 100%
 TEST_CASE("Parse_Fixed"){
-    detail = true;
+    detail = false;
 
     CHECK(test_true("true") == "true");
     CHECK(test_false("false") == "false");

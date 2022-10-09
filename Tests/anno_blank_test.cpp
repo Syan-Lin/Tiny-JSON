@@ -30,7 +30,7 @@ string test_blank(string str){
 
 // Corverage: 100%
 TEST_CASE("Read_Test"){
-    detail = true;
+    detail = false;
 
     SUBCASE("Annotation"){
         CHECK(test_annotation("info//anno\ninfo") == "infoinfo");

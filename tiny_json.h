@@ -572,18 +572,18 @@ public:
                     index++;
                     while(!(str[index++] == '*' && str[index++] == '/')){
                         if(index + 1 >= str.size()){
-                            // TODO: /* 没有 */ 匹配
+                            // /* 没有 */ 匹配 TODO:
                             if(detail) std::cout << "[TinyJSON] expect '*/' to match '/*'" << std::endl;
                             return;
                         }
                     }
                 }else{
-                    // TODO: 只有一个 /，后面不是 / 或 *
+                    // 只有一个 /，后面不是 / 或 * TODO:
                     if(detail) std::cout << "[TinyJSON] expect '/' or '*' after '/'" << std::endl;
                     return;
                 }
             }else{
-                // TODO: 只有一个 /
+                // 只有一个 / TODO:
                 if(detail) std::cout << "[TinyJSON] only one '/' found" << std::endl;
                 return;
             }
@@ -771,6 +771,8 @@ public:
 
         while(index < str.size()){
             char ch = move_next();
+            if(ch == ']')
+                break;
             --index;
             switch(ch){
                 case '0'...'9':
@@ -783,7 +785,7 @@ public:
                 case '{':  arr[count++] = parse_object(); break;
                 case '[':  arr[count++] = parse_array();  break;
                 default:
-                    // 错误 TODO:
+                    // 未知符号 TODO:
                     if(detail) std::cout << "[TinyJSON] unkonwn symbol: " + ch << std::endl;
                     return Json();
             }
@@ -791,7 +793,7 @@ public:
             if(ch == ']'){
                 break;
             }else if(ch != ','){
-                // 期待一个 ',' 但是不是 TODO:
+                // 期待 ',' TODO:
                 if(detail) std::cout << "[TinyJSON] expect ',' but get '" + ch + '\'' << std::endl;
                 return Json();
             }
@@ -801,10 +803,17 @@ public:
     Json parse_object(){
         Json obj = Object();
         std::string key;
+        if(str[index] != '{'){
+            // 期待 '{' TODO:
+            if(detail) std::cout << "[TinyJSON] expect '{' but get '" + str[index] + '\'' << std::endl;
+            return Json();
+        }
         index++;
 
         while(index < str.size()){
             char ch = move_next();
+            if(ch == '}')
+                break;
             --index;
             if(ch == '"'){
                 index++;
@@ -822,13 +831,13 @@ public:
                     key += str[index++];
                 }
             }else{
-                // 期待一个引号 TODO:
+                // 期待 '"' TODO:
                 if(detail) std::cout << "[TinyJSON] expect '\"' but get '" + ch + '\'' << std::endl;
                 return Json();
             }
             ch = move_next();
             if(ch != ':'){
-                // 期待一个冒号 TODO:
+                // 期待 ':' TODO:
                 if(detail) std::cout << "[TinyJSON] expect ':' but get '" + ch + '\'' << std::endl;
                 return Json();
             }
@@ -845,7 +854,7 @@ public:
                 case '{': obj[key] = parse_object(); break;
                 case '[': obj[key] = parse_array();  break;
                 default:
-                    // 错误 TODO:
+                    // 未知符号 TODO:
                     if(detail) std::cout << "[TinyJSON] unkonwn symbol: " + ch << std::endl;
                     return Json();
             }
@@ -855,7 +864,7 @@ public:
             }else if(ch == ','){
                 key.clear();
             }else{
-                // 期待一个 ',' 但是不是 TODO:
+                // 期待 ',' TODO:
                 if(detail) std::cout << "[TinyJSON] expect ',' but get '" + ch + '\'' << std::endl;
             }
         }
