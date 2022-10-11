@@ -116,4 +116,4 @@ time: 16ms
 ```
 
 ### UML Diagram
-![uml](uml.jpg)
+![uml](Res/uml.jpg)
