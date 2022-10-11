@@ -111,7 +111,7 @@ public:
     // Spectial construct functions
     // Construct a json object from interface json()
     template <class T, class = decltype(&T::json)>
-    Json(const T& t) : Json(t.json()) {}
+    Json(T& t) : Json(t.json()) {}
 
     // key-value initializer list
     using kv = std::pair<std::string, Json>;
@@ -413,6 +413,9 @@ inline std::map<std::string, Json>& Json::getMap(){
 }
 
 inline Json& Json::operator[](size_t index){
+    if(type() == Type::NUll){
+        m_val = new internal_class::JsonArray(Array());
+    }
     if(type() == Type::ARRAY){
         auto& vec = static_cast<internal_class::JsonArray&>(*m_val).getVec();
         while(index >= vec.size()){
@@ -424,6 +427,9 @@ inline Json& Json::operator[](size_t index){
     }
 }
 inline Json& Json::operator[](const std::string key){
+    if(type() == Type::NUll){
+        m_val = new internal_class::JsonObject(Object());
+    }
     return type() == Type::OBJECT ? (*m_val)[key] : internal_class::Global::json_default();
 }
 inline Json& Json::operator=(const Json& val){

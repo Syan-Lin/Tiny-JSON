@@ -33,7 +33,7 @@ void example(){
     eyes = "blue";
     hair_style = "straight";
 
-    // 2. Construct a json object(format is optional)
+    // 3. Construct a json object(format is optional)
     Json obj2 = {
         {"person", "bob"},
         {"happy", true},
@@ -77,7 +77,7 @@ void example_json5(){
     eyes = "blue";
     hair_style = "straight";
 
-    // 2. Construct a json object(format is optional)
+    // 3. Construct a json object(format is optional)
     Json obj2 = {
         {"person", "bob"},
         {"happy", true},
@@ -89,6 +89,7 @@ void example_json5(){
         {"list", Array({1, 2, 3})}
     };
     cout << format(obj2.parse()) << endl;
+    JSON5 = false;
 }
 
 void error_test(){
@@ -108,11 +109,36 @@ void error_test(){
     Json obj2 = parse(json ,err);
 }
 
-using jp = json_parser::JsonParser;
+class Person{
+public:
+    Person(int height, int weight, string name)
+    : m_height(height), m_weight(weight), m_name(name) {}
+    int m_height;
+    int m_weight;
+    string m_name;
+public:
+    Json json(){
+        return {
+            {"height", m_height},
+            {"weight", m_weight},
+            {"name", m_name}
+        };
+    }
+};
+
+void ext_test(){
+    Person tom(180, 70, "tom");
+    Person bob(170, 60, "bob");
+    Person jane(160, 50, "jane");
+    Json json;
+    json["person_info"] = Array({tom, bob, jane});
+    cout << format(json.parse()) << endl;
+}
 
 int main() {
-    // example();
-    // example_json5();
+    example();
+    example_json5();
     error_test();
+    ext_test();
     return 0;
 }
