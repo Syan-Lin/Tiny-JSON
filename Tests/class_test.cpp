@@ -199,7 +199,7 @@ TEST_CASE("Class_Json_Test"){
             CHECK(e.getInt() == 2);
         }
         SUBCASE("out_of_boundary"){
-            // 如果越界，自动创建 null {2, 2, 2} -> {2, 2, 2, null, 1}
+            // if out of boundary, create null automatically {2, 2, 2} -> {2, 2, 2, null, 1}
             j[4] = 1;
             CHECK(j[3].isNull());
             CHECK(j[4].getInt() == 1);
@@ -246,6 +246,8 @@ TEST_CASE("Class_Json_Test"){
             CHECK(j["other"].getInt() == 18);
         }
     }
+    j.reset();
+    CHECK(j.isNull());
     SUBCASE("extension"){
         class Test{
         public:
