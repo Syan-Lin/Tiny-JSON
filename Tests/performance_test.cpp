@@ -334,6 +334,15 @@ string readFile(string filename){
     cout << "json_size(" + filename + "): " << result.size() << endl;
     return result;
 }
+template<typename T>
+void countTime(T t){
+    chrono::system_clock::time_point time_point_now = chrono::system_clock::now();
+    t();
+    chrono::system_clock::time_point time_point_after = chrono::system_clock::now();
+    chrono::system_clock::duration duration = time_point_after - time_point_now;
+    time_t time = chrono::duration_cast<chrono::milliseconds>(duration).count();
+    cout << "time: " << time << "ms" << endl;
+}
 
 int main(){
     Performance pt;
@@ -352,5 +361,19 @@ int main(){
     pt.setScale(20, Type::ARRAY);
     pt.runLoop(1000);
     pt.runLoop(10000);
+
+    string twitter = readFile("Json/twitter.json");
+    countTime([&]{
+        parse(twitter);
+    });
+    string canada = readFile("Json/canada.json");
+    countTime([&]{
+        parse(canada);
+    });
+    string citm = readFile("Json/citm_catalog.json");
+    countTime([&]{
+        parse(citm);
+    });
+
     return 0;
 }

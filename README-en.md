@@ -49,8 +49,10 @@ Test coverage reaches 100% in core functions and classes.
 #### Performance tests
 A simple performance test frame is defined in `tiny_json_performance.h`, which could set the scale of types separately to see its actual performance.
 
-Test result:
--
+Test result: compile option `-O3`
+- Generate JSON string reaches 100 million char/s
+- Parse JSON string reaches 60 million char/s
+
 >Tested in i5-12600KF, single thread
 
 Test cases defined below:
@@ -61,7 +63,56 @@ Test cases defined below:
 - Number: `"#numberx": "31415"`
 - Boolean: `"#boolx": true`
 ```
+[===============================================================]
+[--------------- Run tiny_json performance test ----------------]
+[----------------------- Write benchmark -----------------------]
+|     Null  |  Array  |  Object |  String | Number  | Boolean   |
+[---------------- Scale of types in one object -----------------]
+|    10000  |  10000  |  10000  |  10000  |  10000  |  10000    |
+[----------------------- Write JSON (ms) -----------------------]
+|                    str_size: 1873341, 16ms                    |
+[===============================================================]
 
+[===============================================================]
+[--------------- Run tiny_json performance test ----------------]
+[----------------------- Read benchmark ------------------------]
+|     Null  |  Array  |  Object |  String | Number  | Boolean   |
+[---------------- Scale of types in one object -----------------]
+|    10000  |  10000  |  10000  |  10000  |  10000  |  10000    |
+[------------------------ Read JSON (ms) -----------------------]
+|                    str_size: 1873341, 28ms                    |
+[===============================================================]
+
+[===============================================================]
+[--------------- Run tiny_json performance test ----------------]
+[---------------------- Class benchmark ------------------------]
+|     Null  |  Array  |  Object |  String | Number  | Boolean   |
+[---------------- Scale of types in one object -----------------]
+|    100000 |  100000 |  100000 |  100000 |  100000 |  100000   |
+[--------------------- Construct time (ms) ---------------------]
+|    26     |  53     |  74     |  30     |  28     |  26       |
+[--------------------- Destruct time (ms) ----------------------]
+|    34     |  47     |  46     |  26     |  29     |  21       |
+[===============================================================]
+
+[===============================================================]
+[--------------- Run tiny_json performance test ----------------]
+|     Null  |  Array  |  Object |  String | Number  | Boolean   |
+[---------------- Scale of types in one object -----------------]
+|    10     |  20     |  50     |  50     |  20     |  10       |
+[---------------------------- Loops ----------------------------]
+|                             10000                             |
+[--------------------- Construct time (ms) ---------------------]
+[--------------------- Includes write JSON ---------------------]
+|                      str_size: 5981, 901                      |
+[===============================================================]
+
+json_size(Json/twitter.json): 631515
+time: 8ms
+json_size(Json/canada.json): 2251051
+time: 110ms
+json_size(Json/citm_catalog.json): 1727205
+time: 16ms
 ```
 
 ### UML Diagram
