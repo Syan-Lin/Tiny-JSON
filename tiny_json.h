@@ -56,24 +56,22 @@ public:
 
 class Json{
 public:
-    // Construct functions
-    Json();                     // null
-    Json(std::nullptr_t);       // null
-    Json(double);               // number
-    Json(int);                  // number
-    Json(bool);                 // boolean
-    Json(const std::string&);   // string copy
-    Json(std::string&&);        // string move
-    Json(const char*);          // string copy
-    Json(const Json&);          // Json copy
-    Json(Json&&);               // Json move
-    Json(const Array&);         // array copy
-    Json(Array&&);              // array move
-    Json(const Object&);        // object copy
-    Json(Object&&);             // object move
+    Json();
+    Json(std::nullptr_t);
+    Json(double);
+    Json(int);
+    Json(bool);
+    Json(const std::string&);
+    Json(std::string&&);
+    Json(const char*);
+    Json(const Json&);
+    Json(Json&&);
+    Json(const Array&);
+    Json(Array&&);
+    Json(const Object&);
+    Json(Object&&);
     ~Json();
 
-    // Type judgement
     bool isNull()   const;
     bool isNumber() const;
     bool isBool()   const;
@@ -81,7 +79,6 @@ public:
     bool isArray()  const;
     bool isObject() const;
 
-    // Get value
     double             getDouble() const;
     int                getInt()    const;
     bool               getBool()   const;
@@ -91,7 +88,6 @@ public:
     std::vector<Json>&           getVec();
     std::map<std::string, Json>& getMap();
 
-    // Operator overload
     Json& operator[](size_t);
     Json& operator[](const std::string);
     Json& operator=(const Json&);
@@ -203,7 +199,7 @@ inline void parseImpl(const Object& val, std::string& str){
     str += '}';
 }
 
-// Global variables, use to return some empty values
+// To return empty or fixed values
 class JsonBoolean;
 class JsonNull;
 struct Global{
@@ -353,7 +349,8 @@ inline Json::Json()                       : m_val(&internal_class::Global::json_
 inline Json::Json(std::nullptr_t)         : m_val(&internal_class::Global::json_null()) {}
 inline Json::Json(double val)             : m_val(new internal_class::JsonNumber(val)) {}
 inline Json::Json(int val)                : m_val(new internal_class::JsonNumber(val)) {}
-inline Json::Json(bool val)               : m_val(val ? &internal_class::Global::json_true() : &internal_class::Global::json_false()) {}
+inline Json::Json(bool val)               : m_val(val ? &internal_class::Global::json_true()
+                                                        : &internal_class::Global::json_false()) {}
 inline Json::Json(const std::string& val) : m_val(new internal_class::JsonString(val)) {}
 inline Json::Json(std::string&& val)      : m_val(new internal_class::JsonString(std::move(val))) {}
 inline Json::Json(const char* val)        : m_val(new internal_class::JsonString(std::string(val))) {}
@@ -370,11 +367,13 @@ inline Json::Json(std::initializer_list<kv> il){
 }
 inline Json::Json(Json&& val)        : m_val(val.m_val) { val.m_val = nullptr; }
 inline Json::Json(const Json& val){
+    using namespace internal_class;
+
     switch(val.type()){
-        case Type::OBJECT:  m_val = new internal_class::JsonObject(val.m_val->getObject()); break;
-        case Type::STRING:  m_val = new internal_class::JsonString(val.m_val->getString()); break;
-        case Type::NUMBER:  m_val = new internal_class::JsonNumber(val.m_val->getDouble()); break;
-        case Type::ARRAY:   m_val = new internal_class::JsonArray(val.m_val->getArray()); break;
+        case Type::OBJECT:  m_val = new JsonObject(val.m_val->getObject()); break;
+        case Type::STRING:  m_val = new JsonString(val.m_val->getString()); break;
+        case Type::NUMBER:  m_val = new JsonNumber(val.m_val->getDouble()); break;
+        case Type::ARRAY:   m_val = new JsonArray(val.m_val->getArray()); break;
         case Type::BOOLEAN: m_val = val.m_val; break;
         case Type::NUll:    m_val = val.m_val; break;
     }
@@ -400,44 +399,54 @@ inline const std::string& Json::getString() const { return m_val->getString(); }
 inline const Array&       Json::getArray()  const { return m_val->getArray(); }
 inline const Object&      Json::getObject() const { return m_val->getObject(); }
 inline std::vector<Json>& Json::getVec(){
+    using namespace internal_class;
+
     if(type() != Type::ARRAY){
         throw std::runtime_error("getVec() error: type is not array");
     }
-    return static_cast<internal_class::JsonArray&>(*m_val).getVec();
+    return static_cast<JsonArray&>(*m_val).getVec();
 }
 inline std::map<std::string, Json>& Json::getMap(){
+    using namespace internal_class;
+
     if(type() != Type::OBJECT){
         throw std::runtime_error("getMap() error: type is not object");
     }
-    return static_cast<internal_class::JsonObject&>(*m_val).getMap();
+    return static_cast<JsonObject&>(*m_val).getMap();
 }
 
 inline Json& Json::operator[](size_t index){
+    using namespace internal_class;
+
     if(type() == Type::NUll){
-        m_val = new internal_class::JsonArray(Array());
+        m_val = new JsonArray(Array());
     }
     if(type() == Type::ARRAY){
-        auto& vec = static_cast<internal_class::JsonArray&>(*m_val).getVec();
+        auto& vec = static_cast<JsonArray&>(*m_val).getVec();
         while(index >= vec.size()){
             vec.push_back(Json());
         }
         return vec[index];
     }else{
-        return internal_class::Global::json_default();
+        return Global::json_default();
     }
 }
 inline Json& Json::operator[](const std::string key){
+    using namespace internal_class;
+
     if(type() == Type::NUll){
-        m_val = new internal_class::JsonObject(Object());
+        m_val = new JsonObject(Object());
     }
-    return type() == Type::OBJECT ? (*m_val)[key] : internal_class::Global::json_default();
+    return type() == Type::OBJECT ? (*m_val)[key] : Global::json_default();
 }
 inline Json& Json::operator=(const Json& val){
+    using namespace internal_class;
+
     switch(val.type()){
-        case Type::OBJECT:  m_val = new internal_class::JsonObject(val.m_val->getObject()); break;
-        case Type::STRING:  m_val = new internal_class::JsonString(val.m_val->getString()); break;
-        case Type::NUMBER:  m_val = new internal_class::JsonNumber(val.m_val->getDouble()); break;
-        case Type::ARRAY:   m_val = new internal_class::JsonArray(val.m_val->getArray()); break;
+        case Type::OBJECT:  m_val = new JsonObject(val.m_val->getObject()); break;
+        case Type::STRING:  m_val = new JsonString(val.m_val->getString()); break;
+        case Type::NUMBER:  m_val = new JsonNumber(val.m_val->getDouble()); break;
+        case Type::ARRAY:   m_val = new JsonArray(val.m_val->getArray()); break;
         case Type::BOOLEAN: m_val = val.m_val; break;
         case Type::NUll:    m_val = val.m_val; break;
     }
@@ -449,135 +458,161 @@ inline Json& Json::operator=(Json&& val){
     return *this;
 }
 inline Json& Json::operator=(std::nullptr_t){
+    using namespace internal_class;
+
     if(type() != Type::NUll){
         if(type() != Type::BOOLEAN){
             delete m_val;
         }
-        m_val = &internal_class::Global::json_null();
+        m_val = &Global::json_null();
     }
     return *this;
 }
 inline Json& Json::operator=(double val){
+    using namespace internal_class;
+
     if(type() == Type::NUMBER){
-        static_cast<internal_class::JsonNumber&>(*m_val) = val;
+        static_cast<JsonNumber&>(*m_val) = val;
     }else{
         if(type() != Type::BOOLEAN && type() != Type::NUll){
             delete m_val;
         }
-        m_val = new internal_class::JsonNumber(val);
+        m_val = new JsonNumber(val);
     }
     return *this;
 }
 inline Json& Json::operator=(int val){
+    using namespace internal_class;
+
     if(type() == Type::NUMBER){
-        static_cast<internal_class::JsonNumber&>(*m_val) = val;
+        static_cast<JsonNumber&>(*m_val) = val;
     }else{
         if(type() != Type::BOOLEAN && type() != Type::NUll){
             delete m_val;
         }
-        m_val = new internal_class::JsonNumber(val);
+        m_val = new JsonNumber(val);
     }
     return *this;
 }
 inline Json& Json::operator=(bool val){
+    using namespace internal_class;
+
     if(type() == Type::BOOLEAN){
-        m_val = val ? &internal_class::Global::json_true() : &internal_class::Global::json_false();
+        m_val = val ? &Global::json_true() : &Global::json_false();
     }else{
         if(type() != Type::NUll){
             delete m_val;
         }
-        m_val = new internal_class::JsonBoolean(val);
+        m_val = new JsonBoolean(val);
     }
     return *this;
 }
 inline Json& Json::operator=(const std::string& val){
+    using namespace internal_class;
+
     if(type() == Type::STRING){
-        static_cast<internal_class::JsonString&>(*m_val) = val;
+        static_cast<JsonString&>(*m_val) = val;
     }else{
         if(type() != Type::BOOLEAN && type() != Type::NUll){
             delete m_val;
         }
-        m_val = new internal_class::JsonString(val);
+        m_val = new JsonString(val);
     }
     return *this;
 }
 inline Json& Json::operator=(std::string&& val){
+    using namespace internal_class;
+
     if(type() == Type::STRING){
-        static_cast<internal_class::JsonString&>(*m_val) = std::move(val);
+        static_cast<JsonString&>(*m_val) = std::move(val);
     }else{
         if(type() != Type::BOOLEAN && type() != Type::NUll){
             delete m_val;
         }
-        m_val = new internal_class::JsonString(std::move(val));
+        m_val = new JsonString(std::move(val));
     }
     return *this;
 }
 inline Json& Json::operator=(const char* val){
+    using namespace internal_class;
+
     if(type() == Type::STRING){
-        static_cast<internal_class::JsonString&>(*m_val) = std::string(val);
+        static_cast<JsonString&>(*m_val) = std::string(val);
     }else{
         if(type() != Type::BOOLEAN && type() != Type::NUll){
             delete m_val;
         }
-        m_val = new internal_class::JsonString(std::string(val));
+        m_val = new JsonString(std::string(val));
     }
     return *this;
 }
 inline Json& Json::operator=(const Array& val){
+    using namespace internal_class;
+
     if(type() == Type::ARRAY){
-        static_cast<internal_class::JsonArray&>(*m_val) = val;
+        static_cast<JsonArray&>(*m_val) = val;
     }else{
         if(type() != Type::BOOLEAN && type() != Type::NUll){
             delete m_val;
         }
-        m_val = new internal_class::JsonArray(val);
+        m_val = new JsonArray(val);
     }
     return *this;
 }
 inline Json& Json::operator=(Array&& val){
+    using namespace internal_class;
+
     if(type() == Type::ARRAY){
-        static_cast<internal_class::JsonArray&>(*m_val) = std::move(val);
+        static_cast<JsonArray&>(*m_val) = std::move(val);
     }else{
         if(type() != Type::BOOLEAN && type() != Type::NUll){
             delete m_val;
         }
-        m_val = new internal_class::JsonArray(std::move(val));
+        m_val = new JsonArray(std::move(val));
     }
     return *this;
 }
 inline Json& Json::operator=(const Object& val){
+    using namespace internal_class;
+
     if(type() == Type::OBJECT){
-        static_cast<internal_class::JsonObject&>(*m_val) = val;
+        static_cast<JsonObject&>(*m_val) = val;
     }else{
         if(type() != Type::BOOLEAN && type() != Type::NUll){
             delete m_val;
         }
-        m_val = new internal_class::JsonObject(val);
+        m_val = new JsonObject(val);
     }
     return *this;
 }
 inline Json& Json::operator=(Object&& val){
+    using namespace internal_class;
+
     if(type() == Type::OBJECT){
-        static_cast<internal_class::JsonObject&>(*m_val) = std::move(val);
+        static_cast<JsonObject&>(*m_val) = std::move(val);
     }else{
         if(type() != Type::BOOLEAN && type() != Type::NUll){
             delete m_val;
         }
-        m_val = new internal_class::JsonObject(std::move(val));
+        m_val = new JsonObject(std::move(val));
     }
     return *this;
 }
 
 inline void Json::hex(bool val){
+    using namespace internal_class;
+
     if(type() == Type::NUMBER){
-        static_cast<internal_class::JsonNumber&>(*m_val).hex = val;
+        static_cast<JsonNumber&>(*m_val).hex = val;
     }
 }
 inline void Json::reset(){
+    using namespace internal_class;
+
     if(type() != Type::BOOLEAN && type() != Type::NUll){
         delete m_val;
     }
-    m_val = &internal_class::Global::json_null();
+    m_val = &Global::json_null();
 }
 inline Type Json::type() const { return m_val->type(); }
 
@@ -625,14 +660,18 @@ public:
     void skipAnnotation(){
         if(index >= str.size()) return;
         if(str[index] == '/'){
-            index++;
+            ++index;
             if(index < str.size()){
                 if(str[index] == '/'){
-                    index++;
+                    ++index;
                     while(index < str.size() && str[index++] != '\n');
-                    if(str[index-1] == '\n') line++;
+                    if(str[index-1] == '\n') ++line;
                 }else if(str[index] == '*'){
-                    index++;
+                    ++index;
+                    if(index + 1 >= str.size()){
+                        error("[TinyJSON] expect '*/' to match '/*'");
+                        return;
+                    }
                     while(!(str[index++] == '*' && str[index++] == '/')){
                         if(index + 1 >= str.size()){
                             error("[TinyJSON] expect '*/' to match '/*'");
@@ -652,7 +691,7 @@ public:
     void skipBlanks(){
         while(index < str.size() && (str[index] == '\n'
             || str[index] == '\t' || str[index] == ' ')){
-            if(str[index] == '\n') line++;
+            if(str[index] == '\n') ++line;
             ++index;
         }
     }

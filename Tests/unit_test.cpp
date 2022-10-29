@@ -53,7 +53,7 @@ TEST_CASE("Read_Test"){
             CHECK(testAnnotation("info/_error") == "info_error");
             CHECK(testAnnotation("info/") == "info");
             CHECK(testAnnotation("error/*") == "error");
-            CHECK(testAnnotation("error/**") == "error");
+            CHECK(testAnnotation("error/**") == "error*");
             CHECK(testAnnotation("/*error") == "r");
             CHECK(testAnnotation("error/*error") == "errorr");
         }
