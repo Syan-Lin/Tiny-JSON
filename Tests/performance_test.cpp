@@ -1,6 +1,6 @@
 #include <iostream>
 #include <thread>
-#include <map>
+#include <array>
 #include "../tiny_json.h"
 
 using namespace std;
@@ -183,7 +183,7 @@ public:
         getTime();
         Json init = parse(temp);
         cout << "[------------------------ Read JSON (ms) -----------------------]" << endl;
-        printLine("str_size: " + to_string(temp.size()) + ", " + to_string(getTime()) + "ms");
+        printLine("str_size: " + to_string(temp.size()/1000) + " KB, " + to_string(getTime()) + "ms");
         cout << "[===============================================================]\n" << endl;
     }
     void writeBenchmark(){
@@ -228,7 +228,7 @@ public:
         cout << "[----------------------- Write JSON (ms) -----------------------]" << endl;
         getTime();
         string temp = obj.parse();
-        printLine("str_size: " + to_string(temp.size()) + ", " + to_string(getTime()) + "ms");
+        printLine("str_size: " + to_string(temp.size()/1000) + " KB, " + to_string(getTime()) + "ms");
         cout << "[===============================================================]\n" << endl;
     }
     void runLoop(int loop){
@@ -277,7 +277,7 @@ public:
         }
         cout << "[--------------------- Construct time (ms) ---------------------]" << endl;
         cout << "[--------------------- Includes write JSON ---------------------]" << endl;
-        printLine("str_size: " + to_string(json.size()) + ", " + to_string(getTime()));
+        printLine("str_size: " + to_string(json.size()/1000) + " KB, " + to_string(getTime()));
         cout << "[===============================================================]\n" << endl;
     }
     time_t getTime(){
@@ -331,7 +331,7 @@ string readFile(string filename){
 		result += buff + '\n';
 	}
 	file.close();
-    cout << "json_size(" + filename + "): " << result.size() << endl;
+    cout << "json_size(" + filename + "): " << result.size()/1000 << " KB" << endl;
     return result;
 }
 template<typename T>

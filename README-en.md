@@ -49,11 +49,11 @@ Test coverage reaches 100% in core functions and classes.
 #### Performance tests
 A simple performance test frame is defined in `tiny_json_performance.h`, which could set the scale of types separately to see its actual performance.
 
-Test result: compile option `-O3`
-- Generate JSON string reaches 100 million char/s
-- Parse JSON string reaches 60 million char/s
+Test result: The result is related to the data distribution and the performance of the CPU.
+- Generate JSON string reaches 117 MB/s
+- Parse JSON string reaches 107 MB/s
 
->Tested in i5-12600KF, single thread
+>Tested in i5-12600KF, single thread, compile option `-O3`
 
 Test cases defined below:
 - Null: `"#nullx": null`
@@ -70,7 +70,7 @@ Test cases defined below:
 [---------------- Scale of types in one object -----------------]
 |    10000  |  10000  |  10000  |  10000  |  10000  |  10000    |
 [----------------------- Write JSON (ms) -----------------------]
-|                    str_size: 1873341, 16ms                    |
+|                    str_size: 1873 KB, 16ms                    |
 [===============================================================]
 
 [===============================================================]
@@ -80,7 +80,7 @@ Test cases defined below:
 [---------------- Scale of types in one object -----------------]
 |    10000  |  10000  |  10000  |  10000  |  10000  |  10000    |
 [------------------------ Read JSON (ms) -----------------------]
-|                    str_size: 1873341, 28ms                    |
+|                    str_size: 1873 KB, 28ms                    |
 [===============================================================]
 
 [===============================================================]
@@ -104,14 +104,14 @@ Test cases defined below:
 |                             10000                             |
 [--------------------- Construct time (ms) ---------------------]
 [--------------------- Includes write JSON ---------------------]
-|                      str_size: 5981, 901                      |
+|                      str_size: 5 KB, 901                      |
 [===============================================================]
 
-json_size(Json/twitter.json): 631515
+json_size(Json/twitter.json): 631 KB
 time: 8ms
-json_size(Json/canada.json): 2251051
+json_size(Json/canada.json): 2251 KB
 time: 110ms
-json_size(Json/citm_catalog.json): 1727205
+json_size(Json/citm_catalog.json): 1727 KB
 time: 16ms
 ```
 
