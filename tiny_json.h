@@ -24,8 +24,8 @@ struct Parameter{
     static bool JSON5;
     static bool detail;
 };
-bool Parameter::JSON5 = false;
-bool Parameter::detail = true;
+inline bool Parameter::JSON5 = false;
+inline bool Parameter::detail = true;
 // Whether to use JSON5 standard
 #define JSON5 Parameter::JSON5
 // Whether to show error information
@@ -326,9 +326,9 @@ public:
     JsonNull() : JsonBasic(nullptr) {}
 };
 
-const std::string Global::empty_string;
-const Array Global::empty_array;
-const Object Global::empty_object;
+inline const std::string Global::empty_string;
+inline const Array Global::empty_array;
+inline const Object Global::empty_object;
 inline Json& Global::json_default(){
     static Json json_def;
     return json_def;
