@@ -49,7 +49,7 @@ Test coverage reaches 100% in core functions and classes.
 #### Performance tests
 A simple performance test frame is defined in `tiny_json_performance.h`, which could set the scale of types separately to see its actual performance.
 
-Test result: The result is related to the data distribution and the performance of the CPU.
+Test result: The result is related to the data distribution of JSON file and the performance of the CPU.
 - Generate JSON string reaches 117 MB/s
 - Parse JSON string reaches 107 MB/s
 
