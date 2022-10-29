@@ -1,5 +1,5 @@
 # Tiny-JSON
-![](https://img.shields.io/badge/c%2B%2B-11-blue) ![](https://img.shields.io/badge/release-v1.2-blue) ![](https://img.shields.io/badge/coverage-100%25-green) ![](https://img.shields.io/badge/license-mit-blue)
+![](https://img.shields.io/badge/c%2B%2B-11-blue) ![](https://img.shields.io/badge/release-v2.1-blue) ![](https://img.shields.io/badge/coverage-100%25-green) ![](https://img.shields.io/badge/license-mit-blue)
 
 ### Introduction
 Tiny-JSON is a light-weight JSON/JSON5 liberary implemented by C++11. The coding style refers to Google C++ Style Guide, only need includes head file to import, and has no third party dependency.

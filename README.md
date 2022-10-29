@@ -1,5 +1,5 @@
 # Tiny-JSON
-![](https://img.shields.io/badge/c%2B%2B-11-blue) ![](https://img.shields.io/badge/release-v2.0-blue) ![](https://img.shields.io/badge/coverage-100%25-green) ![](https://img.shields.io/badge/license-mit-blue)
+![](https://img.shields.io/badge/c%2B%2B-11-blue) ![](https://img.shields.io/badge/release-v2.1-blue) ![](https://img.shields.io/badge/coverage-100%25-green) ![](https://img.shields.io/badge/license-mit-blue)
 
 ### 介绍
 Tiny-JSON 是一个用 C++11 实现的轻量级 JSON/JSON5 库，编码风格参考了 C++ 谷歌命名规范，导入只需引入头文件，无第三方库依赖。
