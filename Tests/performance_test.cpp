@@ -1,12 +1,22 @@
 #include <iostream>
 #include <thread>
 #include <array>
-#include "../tiny_json.h"
+#include "tiny_json.h"
 
 using namespace std;
 using namespace tiny_json;
 
 #define MAX_LENGTH 9999999
+
+#ifndef CANADA_JSON
+#define CANADA_JSON "Json/canada.json"
+#endif
+#ifndef TWITTER_JSON
+#define TWITTER_JSON "Json/twitter.json"
+#endif
+#ifndef CITM_JSON
+#define CITM_JSON "Json/citm_catalog.json"
+#endif
 
 class Performance{
 public:
@@ -362,15 +372,15 @@ int main(){
     pt.runLoop(1000);
     pt.runLoop(10000);
 
-    string twitter = readFile("Json/twitter.json");
+    string twitter = readFile(TWITTER_JSON);
     countTime([&]{
         parse(twitter);
     });
-    string canada = readFile("Json/canada.json");
+    string canada = readFile(CANADA_JSON);
     countTime([&]{
         parse(canada);
     });
-    string citm = readFile("Json/citm_catalog.json");
+    string citm = readFile(CITM_JSON);
     countTime([&]{
         parse(citm);
     });
