@@ -1005,6 +1005,9 @@ inline std::string format(const std::string& json){
                     level++;
                     printBlank();
                     break;
+                case ':':
+                    str += ' ';
+                    break;
             }
         }else if(in_double && json[i] == '"' && json[i-1] != '\\'){
             in_double = false;
